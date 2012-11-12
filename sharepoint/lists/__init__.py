@@ -109,7 +109,14 @@ class SharePointListRow(object):
         self.id = self.ID
 
     def __repr__(self):
-        return "<SharePointListRow {0} '{1}'>".format(self.id, self.Title)
+        return "<SharePointListRow {0} '{1}'>".format(self.id, self.name)
+
+    @property
+    def name(self):
+        try:
+            return self.Title
+        except AttributeError:
+            return self.LinkFilename
 
     @property
     def is_file(self):

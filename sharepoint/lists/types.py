@@ -4,7 +4,10 @@ class FieldDescriptor(object):
     def __init__(self, field):
         self.field = field
     def __get__(self, instance, owner):
-        return self.field.lookup(instance, instance.data[self.field.name])
+        try:
+            return self.field.lookup(instance, instance.data[self.field.name])
+        except KeyError:
+            raise AttributeError
 
 class MultiFieldDescriptor(object):
     def __init__(self, field):

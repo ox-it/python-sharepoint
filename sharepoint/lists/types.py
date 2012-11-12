@@ -1,5 +1,7 @@
 import datetime
 
+from lxml.builder import E
+
 class FieldDescriptor(object):
     def __init__(self, field):
         self.field = field
@@ -68,6 +70,9 @@ class Field(object):
 
     def lookup(self, row, value):
         return value
+
+    def as_xml(self, value):
+        return E('field', unicode(value), name=self.name)
 
 class TextField(Field):
     def parse(self, value):

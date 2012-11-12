@@ -101,6 +101,12 @@ class SharePointList(object):
             self._row_class = type('SharePointListRow', (SharePointListRow,), attrs)
         return self._row_class
 
+    def as_xml(self):
+        list_element = E('list')
+        for row in self.rows:
+            list_element.append(row.as_xml())
+        return list_element
+
 class SharePointListRow(object):
     def __init__(self, row):
         self.data = {}
@@ -123,6 +129,22 @@ class SharePointListRow(object):
     @property
     def is_file(self):
         return hasattr(self, 'LinkFilename')
+    
+    def as_xml(self):
+        fields_element = E('fields')
+        row_element = E('row', fields_element, id=unicode(self.id))
+        for field in self.fields:
+            try:
+                data = getattr(self, field.name)
+            except AttributeError:
+                pass
+            else:
+                fields_element.append(field.as_xml(data))
+        if self.is_file and self.data.get('DocIcon') == 'xml':
+            content = etree.parse(self.open()).getroot()
+            content_element = E('content', content)
+            row_element.append(content_element)
+        return row_element
 
     def open(self):
         url = self.opener.relative(self.list.meta['Title'] + '/' + urllib.quote(self.LinkFilename))

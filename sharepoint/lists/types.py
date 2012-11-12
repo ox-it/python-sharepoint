@@ -23,7 +23,7 @@ class Field(object):
     def __init__(self, lists, list_id, xml):
         self.lists, self.list_id = lists, list_id
         self.name = xml.attrib['Name']
-	self.display_name = xml.attrib['DisplayName']
+        self.display_name = xml.attrib['DisplayName']
         self.description = xml.attrib.get('Description')
         if self.multi is None:
             self.multi = xml.attrib.get('Mult') == 'TRUE'
@@ -83,7 +83,7 @@ class LookupField(Field):
 
     def __init__(self, lists, list_id, xml):
         super(LookupField, self).__init__(lists, list_id, xml)
-	self.lookup_list = xml.attrib['List']
+        self.lookup_list = xml.attrib['List']
 
     def parse(self, value):
         return self.lookup_list, int(value[0])

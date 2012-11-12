@@ -95,7 +95,7 @@ class SharePointList(object):
     @property
     def row_class(self):
         if not hasattr(self, '_row_class'):
-            attrs = {'fields': self.fields, 'list': self}
+            attrs = {'fields': self.fields, 'list': self, 'opener': self.opener}
             for field in self.fields:
                 attrs[field.name] = field.descriptor
             self._row_class = type('SharePointListRow', (SharePointListRow,), attrs)

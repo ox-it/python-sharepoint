@@ -113,6 +113,9 @@ class LookupField(Field):
         list_id, row_id = value
         return row.list.lists[list_id].rows_by_id[row_id]
 
+    def _as_xml(self, value):
+        return E('lookup', value.as_xml())
+
 class URLField(Field):
     def parse(self, value):
         href, text = value.split(', ', 1)

@@ -112,7 +112,7 @@ class SharePointList(object):
             field_element = E('field', name=field.name, display_name=field.display_name)
             if field.description:
                 field_element.attrib['description'] = field.description
-            field.attrib['multi'] = 'true' if field.multi else 'false'
+            field_element.attrib['multi'] = 'true' if field.multi else 'false'
             fields_element.append(field_element)
         for row in self.rows:
             list_element.append(row.as_xml())

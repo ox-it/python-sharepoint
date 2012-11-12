@@ -83,6 +83,9 @@ class Field(object):
     
     def _as_xml(self, value):
         return E('text', unicode(value))
+    
+    def __repr__(self):
+        return u"<%s '%s'>" % (type(self).__name__, self.name)
 
 class TextField(Field):
     def parse(self, value):

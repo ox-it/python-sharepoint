@@ -1,29 +1,31 @@
 import re
+import urllib
 import urllib2
 import urlparse
 
 from lxml import etree
+from lxml.builder import E
 
 from sharepoint.xml import SP, namespaces
 from sharepoint.lists.types import type_mapping, default_type
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
 
+LIST_WEBSERVICE = '_vti_bin/Lists.asmx'
+
 class SharePointLists(object):
-    def __init__(self, site, url, post):
-        self.site = site
-        self.url = url + '_vti_bin/Lists.asmx'
-        self.post = post
+    def __init__(self, opener):
+        self.opener = opener
 
     @property
     def all_lists(self):
         if not hasattr(self, '_all_lists'):
             xml = SP.GetListCollection()
-            result = self.post(self.url, xml)
+            result = self.opener.post_soap(LIST_WEBSERVICE, xml)
     
             self._all_lists = []
             for list_element in result.xpath('sp:GetListCollectionResult/sp:Lists/sp:List', namespaces=namespaces):
-                self._all_lists.append(SharePointList(self.site, self.url, self.post, self, dict(list_element.attrib)))
+                self._all_lists.append(SharePointList(self.opener, self, dict(list_element.attrib)))
         return self._all_lists
 
     def __iter__(self):
@@ -46,9 +48,9 @@ class SharePointLists(object):
         raise KeyError
 
 class SharePointList(object):
-    def __init__(self, site, url, post, lists, meta):
-        self.site = site
-        self.url, self.post, self.lists, self.meta = url, post, lists, meta
+    def __init__(self, opener, lists, meta):
+        self.opener = opener
+        self.lists, self.meta = lists, meta
         self.id = meta['ID'].lower()
 
     def __repr__(self):
@@ -58,7 +60,7 @@ class SharePointList(object):
     def settings(self):
         if not hasattr(self, '_settings'):
             xml = SP.GetList(SP.listName('{0}'.format(self.id)))
-            response = self.post(self.url, xml)
+            response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             self._settings = response[0][0]
         return self._settings
 
@@ -66,7 +68,7 @@ class SharePointList(object):
     def rows(self):
         if not hasattr(self, '_rows'):
             xml = SP.GetListItems(SP.listName('{0}'.format(self.id)))
-            response = self.post(self.url, xml)
+            response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             xml_rows = list(response[0][0][0])
             self._rows = []
             for xml_row in xml_rows:
@@ -123,9 +125,7 @@ class SharePointListRow(object):
         return hasattr(self, 'LinkFilename')
 
     def open(self):
-        url = urlparse.urljoin(self.list.site.url,
-                               self.list.meta['Title'] + '/' + self.LinkFilename.replace(' ', '%20'))
+        url = self.opener.relative(self.list.meta['Title'] + '/' + urllib.quote(self.LinkFilename))
         request = urllib2.Request(url)
         request.add_header('Translate', 'f')
-        return self.list.site.opener.open(request)
-
+        return self.opener.open(request)

@@ -15,8 +15,11 @@ class MultiFieldDescriptor(object):
     def __init__(self, field):
         self.field = field
     def __get__(self, instance, owner):
-        values = instance.data[self.field.name]
-        return [self.field.lookup(instance, value) for value in values]
+        try:
+            values = instance.data[self.field.name]
+            return [self.field.lookup(instance, value) for value in values]
+        except KeyError:
+            raise AttributeError
 
 class Field(object):
     group_multi = None

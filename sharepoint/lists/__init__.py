@@ -102,7 +102,14 @@ class SharePointList(object):
         return self._row_class
 
     def as_xml(self):
-        list_element = E('list')
+        fields_element, rows_element = E('fields'), E('rows')
+        list_element = E('list', fields_element, rows_element)
+        for field in self.fields:
+            field_element = E('field', name=field.name, display_name=field.display_name)
+            if field.description:
+                field_element.attrib['description'] = field.description
+            field.attrib['multi'] = 'true' if field.multi else 'false'
+            fields_element.append(field_element)
         for row in self.rows:
             list_element.append(row.as_xml())
         return list_element

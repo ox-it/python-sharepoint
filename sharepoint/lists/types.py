@@ -73,7 +73,16 @@ class Field(object):
         return value
 
     def as_xml(self, value):
-        return E('field', unicode(value), name=self.name)
+        field_element = E('field', name=self.name)
+        if self.multi:
+            for subvalue in value:
+                field_element.append(self._as_xml(subvalue))
+        else:
+            field_element.append(self._as_xml(value))
+        return field_element
+    
+    def _as_xml(self, value):
+        return E('text', unicode(value))
 
 class TextField(Field):
     def parse(self, value):

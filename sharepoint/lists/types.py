@@ -27,6 +27,7 @@ class Field(object):
         self.name = xml.attrib['Name']
         self.display_name = xml.attrib['DisplayName']
         self.description = xml.attrib.get('Description')
+        self.field_type = xml.attrib['Type']
         if self.multi is None:
             self.multi = xml.attrib.get('Mult') == 'TRUE'
 

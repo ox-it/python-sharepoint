@@ -57,6 +57,10 @@ class SharePointList(object):
         return "<SharePointList {0} '{1}'>".format(self.id, self.meta['Title'])
 
     @property
+    def name(self):
+        return self.meta['Title']
+
+    @property
     def settings(self):
         if not hasattr(self, '_settings'):
             xml = SP.GetList(SP.listName('{0}'.format(self.id)))

@@ -112,8 +112,12 @@ class LookupField(Field):
 
 class URLField(Field):
     def parse(self, value):
-        url, text = value.split(', ', 1)
-        return ('U', url, text)
+        href, text = value.split(', ', 1)
+        return {'href': href, 'text': text}
+
+    def _as_xml(self, value):
+        return E('url', value['text'], href=value['href'])
+
 
 class ChoiceField(Field):
     def parse(self, value):
@@ -131,19 +135,31 @@ class DateTimeField(Field):
     def parse(self, value):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
 
+    def _as_xml(self, value):
+        return E('dateTime', value.isoformat())
+
 class UnknownField(Field):
     def parse(self, value):
         return value
+
+    def _as_xml(self, value):
+        return E('unknown', unicode(value))
 
 class CounterField(Field):
     def parse(self, value):
         return int(value)
 
+    def _as_xml(self, value):
+        return E('int', unicode(value))
+
 class UserField(Field):
     group_multi = 2
 
     def parse(self, value):
-        return ('USER', value)
+        return {'id': value[0], 'name': value[1]}
+
+    def _as_xml(self, value):
+        return E('user', value['name'], id=unicode(value['id']))
 
 
 type_mapping = {'Text': TextField,

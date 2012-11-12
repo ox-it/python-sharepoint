@@ -1,0 +1,7 @@
+build
+*.pyc
+
+# For Eclipse
+.project
+.pydevproject
+.settings

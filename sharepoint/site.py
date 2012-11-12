@@ -23,7 +23,7 @@ class SharePointSite(object):
     @property
     def lists(self):
         if not hasattr(self, '_lists'):
-            self._lists = SharePointLists(self.url, self.post)
+            self._lists = SharePointLists(self, self.url, self.post)
         return self._lists
 
 

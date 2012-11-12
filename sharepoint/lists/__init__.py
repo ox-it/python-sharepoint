@@ -1,4 +1,6 @@
 import re
+import urllib2
+import urlparse
 
 from lxml import etree
 
@@ -8,7 +10,8 @@ from sharepoint.lists.types import type_mapping, default_type
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
 
 class SharePointLists(object):
-    def __init__(self, url, post):
+    def __init__(self, site, url, post):
+        self.site = site
         self.url = url + '_vti_bin/Lists.asmx'
         self.post = post
 
@@ -20,7 +23,7 @@ class SharePointLists(object):
     
             self._all_lists = []
             for list_element in result.xpath('sp:GetListCollectionResult/sp:Lists/sp:List', namespaces=namespaces):
-                self._all_lists.append(SharePointList(self.url, self.post, self, dict(list_element.attrib)))
+                self._all_lists.append(SharePointList(self.site, self.url, self.post, self, dict(list_element.attrib)))
         return self._all_lists
 
     def __iter__(self):
@@ -43,7 +46,8 @@ class SharePointLists(object):
         raise KeyError
 
 class SharePointList(object):
-    def __init__(self, url, post, lists, meta):
+    def __init__(self, site, url, post, lists, meta):
+        self.site = site
         self.url, self.post, self.lists, self.meta = url, post, lists, meta
         self.id = meta['ID'].lower()
 
@@ -106,3 +110,15 @@ class SharePointListRow(object):
 
     def __repr__(self):
         return "<SharePointListRow {0} '{1}'>".format(self.id, self.Title)
+
+    @property
+    def is_file(self):
+        return hasattr(self, 'LinkFilename')
+
+    def open(self):
+        url = urlparse.urljoin(self.list.site.url,
+                               self.list.meta['Title'] + '/' + self.LinkFilename.replace(' ', '%20'))
+        request = urllib2.Request(url)
+        request.add_header('Translate', 'f')
+        return self.list.site.opener.open(request)
+

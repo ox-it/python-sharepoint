@@ -1,4 +1,5 @@
 import datetime
+import warnings
 
 from lxml.builder import E
 
@@ -52,7 +53,10 @@ class Field(object):
                 values.append(value[start:pos].replace(';;', ';'))
                 start = pos = pos + 2
             else:
-                raise ValueError("Unexpected character after ';': {0}".format(value[pos+1]))
+                pos += 2
+                warnings.warn("Upexpected character after ';': {0}".format(value[pos+1]))
+                #raise ValueError("Unexpected character after ';': {0}".format(value[pos+1]))
+                continue
 
         if self.group_multi is not None:
             values = [values[i:i+self.group_multi] for i in xrange(0, len(values), self.group_multi)]

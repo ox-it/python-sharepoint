@@ -7,11 +7,13 @@ A Python library and command-line utility for gettting data out of SharePoint.
 Installation
 ------------
 
-Simply clone the git repository from https://github.com/ox-it/python-sharepoint and run::
+Either install the latest development from git::
 
-   $ python setup.py install
+   $ git clone git://github.com/ox-it/python-sharepoint.git
+   $ cd python-sharepoint
+   $ sudo python setup.py install
 
-… or, use pip:
+… or, install the latest stable version using pip::
 
    $ pip install sharepoint
 

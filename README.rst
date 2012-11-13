@@ -1,7 +1,7 @@
 python-sharepoint
 =================
 
-A Python library for gettting data out of SharePoint
+A Python library and command-line utility for gettting data out of SharePoint.
 
 Usage
 -----
@@ -21,6 +21,7 @@ yourself.
    opener = basic_auth_opener(server_url, "username", "password")
 
    site = SharePointSite(site_url, opener)
+
 
 Lists
 ~~~~~
@@ -46,4 +47,28 @@ Given a list, you can iterate over its rows::
        print row.id, row.FieldName
 
 It's not yet possible to modify lists using this library.
+
+
+Command-line utility
+~~~~~~~~~~~~~~~~~~~~
+
+Here's how to get a list of lists from a SharePoint site::
+
+   $ sharepoint --site-url=http://sharepoint.example.org/sites/foo/bar \
+                --username=username --password=password
+
+And here's how to get an entire list as XML::
+
+   $ sharepoint --site-url=http://sharepoint.example.org/sites/foo/bar \
+                --list-name=ListName \
+                --username=username --password=password
+
+You can also specify a file containing username and password in the format
+'username:password'::
+
+   $ sharepoint --credentials=path/to/credentials [...]
+
+For help, use ``-h``::
+
+   $ sharepoint -h
 

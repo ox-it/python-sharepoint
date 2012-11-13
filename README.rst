@@ -7,15 +7,23 @@ A Python library and command-line utility for gettting data out of SharePoint.
 Installation
 ------------
 
-Either install the latest development from git::
+Either install the latest development from ``git``::
 
    $ git clone git://github.com/ox-it/python-sharepoint.git
    $ cd python-sharepoint
    $ sudo python setup.py install
 
-… or, install the latest stable version using pip::
+… or, install the latest stable version using ``pip``::
 
    $ pip install sharepoint
+
+You will need `lxml <http://lxml.de/>`_, which you can install using your
+package manager or ``pip``. Run one of the following if it's not already
+installed::
+
+   $ sudo apt-get install python-lxml  # Debian, Ubuntu
+   $ sudo yum install python-lxml      # RedHat, Fedora
+   $ sudo pip install lxml             # pip
 
 
 Usage

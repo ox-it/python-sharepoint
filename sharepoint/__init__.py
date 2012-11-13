@@ -1,5 +1,7 @@
 from .site import SharePointSite, basic_auth_opener
 
+__version__ = '0.1'
+
 if __name__ == '__main__':
     from optparse import OptionParser
     import os

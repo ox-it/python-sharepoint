@@ -1,4 +1,7 @@
 build
+dist
+MANIFEST
+.*.swp
 *.pyc
 
 # For Eclipse

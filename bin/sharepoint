@@ -1,0 +1,7 @@
+#!/usr/bin/python
+
+import sharepoint.cmd
+
+if __name__ == '__main__':
+    sharepoint.cmd.main()
+

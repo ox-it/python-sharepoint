@@ -4,7 +4,10 @@ def main():
     from optparse import OptionParser, OptionGroup
     import os
     import sys
+    import warnings
     from lxml import etree
+
+    warnings.simplefilter("ignore")
 
     description = ["A utility to extract data from SharePoint sites, returning ",
                    "XML. Available actions are 'lists' (returns a list of ",

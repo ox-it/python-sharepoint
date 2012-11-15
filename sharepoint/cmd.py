@@ -26,9 +26,9 @@ def main():
 
     list_options = OptionGroup(parser, 'List options')
     list_options.add_option('-l', '--list-name', dest='list_names', help='Name of a list to retrieve. Can be repeated to return multiple lists. If not present at all, all lists will be returned.', action='append')
-    list_options.add_option('-d', '--data', dest='include_data', action='store_true', help="Include list data in output (default for export_lists)")
+    list_options.add_option('-d', '--data', dest='include_data', action='store_true', default=True, help="Include list data in output (default for export_lists)")
     list_options.add_option('-D', '--no-data', dest='include_data', action='store_false', help="Don't include list data in output")
-    list_options.add_option('-f', '--fields', dest='include_field_definitions', action='store_true', help="Include field definitions data in output (default for export_lists)")
+    list_options.add_option('-f', '--fields', dest='include_field_definitions', action='store_true', default=True, help="Include field definitions data in output (default for export_lists)")
     list_options.add_option('-F', '--no-fields', dest='include_field_definitions', action='store_false', help="Don't include field definitions data in output")
     parser.add_option_group(list_options)
 

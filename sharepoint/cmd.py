@@ -1,17 +1,33 @@
 from .site import SharePointSite, basic_auth_opener
 
 def main():
-    from optparse import OptionParser
+    from optparse import OptionParser, OptionGroup
     import os
     import sys
     from lxml import etree
 
-    parser = OptionParser()
+    description = ["A utility to extract data from SharePoint sites, returning ",
+                   "XML. Available actions are 'lists' (returns a list of ",
+                   "lists in the SharePoint site), and 'export_lists' (returns ",
+                   "data for all or specified lists"]
+
+    parser = OptionParser(usage='%prog action [options]',
+                          description=''.join(description))
     parser.add_option('-s', '--site-url', dest='site_url', help='Root URL for the SharePoint site')
-    parser.add_option('-l', '--list-name', dest='list_name', help='Name of the list to retrieve')
     parser.add_option('-u', '--username', dest='username', help='Username')
     parser.add_option('-p', '--password', dest='password', help='Password')
     parser.add_option('-c', '--credentials', dest='credentials', help="File containing 'username:password'.")
+
+    parser.add_option('-n', '--pretty-print', dest='pretty_print', action='store_true', default=True)
+    parser.add_option('-N', '--no-pretty-print', dest='pretty_print', action='store_false')
+
+    list_options = OptionGroup(parser, 'List options')
+    list_options.add_option('-l', '--list-name', dest='list_names', help='Name of a list to retrieve. Can be repeated to return multiple lists. If not present at all, all lists will be returned.', action='append')
+    list_options.add_option('-d', '--data', dest='include_data', action='store_true', help="Include list data in output (default for export_lists)")
+    list_options.add_option('-D', '--no-data', dest='include_data', action='store_false', help="Don't include list data in output")
+    list_options.add_option('-f', '--fields', dest='include_field_definitions', action='store_true', help="Include field definitions data in output (default for export_lists)")
+    list_options.add_option('-F', '--no-fields', dest='include_field_definitions', action='store_false', help="Don't include field definitions data in output")
+    parser.add_option_group(list_options)
 
     options, args = parser.parse_args()
 
@@ -30,17 +46,25 @@ def main():
     opener = basic_auth_opener(options.site_url, username, password)
     site = SharePointSite(options.site_url, opener)
 
-    if options.list_name:
-        try:
-            sharepoint_list = site.lists[options.list_name]
-        except KeyError:
-            sys.stderr.write("No list with name '%s'.\n" % options.list_name)
-            sys.exit(1)
+    if not len(args) == 1:
+        sys.stderr.write("You must provide an action. Use -h for more information.\n")
+        sys.exit(1)
 
-        sys.stdout.write(etree.tostring(sharepoint_list.as_xml(), pretty_print=True))
+    action = args[0]
+
+    if action == 'lists':
+        xml = site.lists.as_xml(options.list_names or None,
+                                include_data=False,
+                                include_field_definitions=False)
+    elif action == 'export_lists':
+        xml = site.lists.as_xml(options.list_names or None,
+                                include_data=options.include_data,
+                                include_field_definitions=options.include_field_definitions)
     else:
-        for sharepoint_list in site.lists:
-            print sharepoint_list.name
+        sys.stderr.write("Unsupported action: '%s'. Use -h to discover supported actions.\n")
+        sys.exit(1)
+
+    sys.stdout.write(etree.tostring(xml, pretty_print=options.pretty_print))
 
 if __name__ == '__main__':
     main()

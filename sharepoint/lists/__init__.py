@@ -47,6 +47,21 @@ class SharePointLists(object):
             raise KeyError("No list with title '{0}'".format(key))
         raise KeyError
 
+    def __contains__(self, key):
+        try:
+            self[key]
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def as_xml(self, keys=None, **kwargs):
+        if keys is not None:
+            lists = (self[key] for key in keys)
+        else:
+            lists = self
+        return E.lists(*[l.as_xml(**kwargs) for l in lists])
+
 class SharePointList(object):
     def __init__(self, opener, lists, meta):
         self.opener = opener
@@ -105,20 +120,34 @@ class SharePointList(object):
             self._row_class = type('SharePointListRow', (SharePointListRow,), attrs)
         return self._row_class
 
-    def as_xml(self):
-        fields_element, rows_element = E('fields'), E('rows')
-        list_element = E('list', fields_element, rows_element)
-        for field in self.fields:
-            field_element = E('field', name=field.name, display_name=field.display_name)
-            if field.description:
-                field_element.attrib['description'] = field.description
-            field_element.attrib['multi'] = 'true' if field.multi else 'false'
-            fields_element.append(field_element)
-        for row in self.rows:
-            list_element.append(row.as_xml())
+    def as_xml(self, include_data=True, include_field_definitions=True, **kwargs):
+        list_element = E('list', name=self.name, id=self.id)
+
+        if include_field_definitions:
+            fields_element = E('fields')
+            for field in self.fields:
+                field_element = E('field',
+                                  name=field.name,
+                                  display_name=field.display_name,
+                                  sharepoint_type=field.sharepoint_type,
+                                  type=field.type_name,
+                                  **field.extra_field_definition())
+                if field.description:
+                    field_element.attrib['description'] = field.description
+                field_element.attrib['multi'] = 'true' if field.multi else 'false'
+                fields_element.append(field_element)
+            list_element.append(fields_element)
+
+        if include_data:
+            rows_element = E('rows')
+            for row in self.rows:
+                rows_element.append(row.as_xml(**kwargs))
+            list_element.append(rows_element)
         return list_element
 
 class SharePointListRow(object):
+    # fields, list and opener are added as class attributes in SharePointList.row_class
+
     def __init__(self, row):
         self.data = {}
         for field in self.fields:
@@ -141,19 +170,23 @@ class SharePointListRow(object):
     def is_file(self):
         return hasattr(self, 'LinkFilename')
     
-    def as_xml(self):
+    def as_xml(self, **kwargs):
         fields_element = E('fields')
         row_element = E('row', fields_element, id=unicode(self.id))
         for field in self.fields:
             try:
-                data = getattr(self, field.name)
-            except AttributeError:
+                data = self.data[field.name]
+            except KeyError:
                 pass
             else:
-                fields_element.append(field.as_xml(data))
+                fields_element.append(field.as_xml(self, data, **kwargs))
         if self.is_file and self.data.get('DocIcon') == 'xml':
-            content = etree.parse(self.open()).getroot()
-            content_element = E('content', content)
+            try:
+                content = etree.parse(self.open()).getroot()
+            except urllib2.HTTPError, e:
+                content_element = E('content', missing='true')
+            else:
+                content_element = E('content', content)
             row_element.append(content_element)
         return row_element
 

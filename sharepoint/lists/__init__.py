@@ -35,7 +35,9 @@ class SharePointLists(object):
         if isinstance(key, int):
             return self.all_lists[key]
         elif uuid_re.match(key.lower()):
-            key = '{0}'.format(uuid_re.match(key.lower()).group(0))
+            # Using group 1 and adding braces allows us to match IDs that
+            # didn't originally have braces.
+            key = '{' + '{0}'.format(uuid_re.match(key.lower()).group(1)) + '}'
             for list_object in self.all_lists:
                 if list_object.id == key:
                     return list_object

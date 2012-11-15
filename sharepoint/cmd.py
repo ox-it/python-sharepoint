@@ -11,7 +11,7 @@ def main():
 
     description = ["A utility to extract data from SharePoint sites, returning ",
                    "XML. Available actions are 'lists' (returns a list of ",
-                   "lists in the SharePoint site), and 'export_lists' (returns ",
+                   "lists in the SharePoint site), and 'exportlists' (returns ",
                    "data for all or specified lists"]
 
     parser = OptionParser(usage='%prog action [options]',
@@ -59,7 +59,7 @@ def main():
         xml = site.lists.as_xml(options.list_names or None,
                                 include_data=False,
                                 include_field_definitions=False)
-    elif action == 'export_lists':
+    elif action == 'exportlists':
         xml = site.lists.as_xml(options.list_names or None,
                                 include_data=options.include_data,
                                 include_field_definitions=options.include_field_definitions)

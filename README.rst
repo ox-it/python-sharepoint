@@ -16,7 +16,7 @@ Either install the latest development from ``git``::
    $ cd python-sharepoint
    $ sudo python setup.py install
 
-… or, install the latest stable version using ``pip``::
+... or, install the latest stable version using ``pip``::
 
    $ pip install sharepoint
 
@@ -80,21 +80,20 @@ Command-line utility
 
 Here's how to get a list of lists from a SharePoint site::
 
-   $ sharepoint --site-url=http://sharepoint.example.org/sites/foo/bar \
-                --username=username --password=password
+   $ sharepoint lists -s http://sharepoint.example.org/sites/foo/bar \
+                -u username -p password
 
 And here's how to get an entire list as XML::
 
-   $ sharepoint --site-url=http://sharepoint.example.org/sites/foo/bar \
-                --list-name=ListName \
-                --username=username --password=password
+   $ sharepoint -s http://sharepoint.example.org/sites/foo/bar \
+                -l ListName \
+                -u username -p password
 
 You can also specify a file containing username and password in the format
 'username:password'::
 
    $ sharepoint --credentials=path/to/credentials [...]
 
-For help, use ``-h``::
+For help (including to see more options to configure the output, use ``-h``::
 
    $ sharepoint -h
-

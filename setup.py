@@ -7,7 +7,7 @@ packages = ['sharepoint',
 
 setup(name='sharepoint',
       description='Module and command-line utility to get data out of SharePoint',
-      long_description=open('README.rst').read().decode('utf-8'),
+      long_description=open('README.rst').read(),
       author='IT Services, University of Oxford',
       author_email='opendata@oucs.ox.ac.uk',
       version=__version__,

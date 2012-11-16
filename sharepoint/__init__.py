@@ -1,4 +1,4 @@
 from .site import SharePointSite, basic_auth_opener
 
-__version__ = '0.2'
+__version__ = '0.2.1'
 

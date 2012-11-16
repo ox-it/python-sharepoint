@@ -30,6 +30,8 @@ def main():
     list_options.add_option('-D', '--no-data', dest='include_data', action='store_false', help="Don't include list data in output")
     list_options.add_option('-f', '--fields', dest='include_field_definitions', action='store_true', default=True, help="Include field definitions data in output (default for export_lists)")
     list_options.add_option('-F', '--no-fields', dest='include_field_definitions', action='store_false', help="Don't include field definitions data in output")
+    list_options.add_option('-t', '--transclude-xml', dest='transclude_xml', action='store_true', default=False, help="Transclude linked XML files into row data")
+    list_options.add_option('-T', '--no-transclude-xml', dest='transclude_xml', action='store_false', help="Don't transclude XML")
     parser.add_option_group(list_options)
 
     options, args = parser.parse_args()
@@ -62,7 +64,8 @@ def main():
     elif action == 'exportlists':
         xml = site.lists.as_xml(options.list_names or None,
                                 include_data=options.include_data,
-                                include_field_definitions=options.include_field_definitions)
+                                include_field_definitions=options.include_field_definitions,
+                                transclude_xml=options.transclude_xml)
     else:
         sys.stderr.write("Unsupported action: '%s'. Use -h to discover supported actions.\n")
         sys.exit(1)

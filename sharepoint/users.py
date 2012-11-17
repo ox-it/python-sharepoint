@@ -29,6 +29,12 @@ class SharePointUsers(object):
             raise KeyError
         return self._users[key]
 
+    def as_xml(self, ids):
+        xml = OUT.users()
+        for id in ids:
+            xml.append(self[id].as_xml())
+        return xml
+
 class SharePointUser(object):
     def __init__(self, id, props):
         self._props = props

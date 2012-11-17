@@ -63,6 +63,9 @@ class Field(object):
             values = [values[i:i+self.group_multi] for i in xrange(0, len(values), self.group_multi)]
 
         if self.multi:
+            # if we have [['']], then remove the last entry
+            if values and not values[-1][0]:
+                del values[-1]
             return map(self.parse, values)
         else:
             return self.parse(values[0])
@@ -192,6 +195,8 @@ class UserField(Field):
     def _as_xml(self, row, value, **kwargs):
         return OUT('user', value['name'], id=unicode(value['id']))
 
+class UserMultiField(UserField):
+    multi = True
 
 type_mapping = {'Text': TextField,
                 'Lookup': LookupField,
@@ -203,5 +208,6 @@ type_mapping = {'Text': TextField,
                 'Counter': CounterField,
                 'Computed': TextField,
                 'Note': TextField,
-                'User': UserField}
+                'User': UserField,
+                'UserMulti': UserMultiField}
 default_type = UnknownField

@@ -1,7 +1,7 @@
 import datetime
 import warnings
 
-from lxml.builder import E
+from ..xml import OUT
 
 class FieldDescriptor(object):
     def __init__(self, field):
@@ -81,7 +81,7 @@ class Field(object):
         return value
 
     def as_xml(self, row, value, **kwargs):
-        field_element = E('field', name=self.name)
+        field_element = OUT('field', name=self.name)
         if self.multi:
             for subvalue in value:
                 field_element.append(self._as_xml(row, subvalue, **kwargs))
@@ -90,7 +90,7 @@ class Field(object):
         return field_element
     
     def _as_xml(self, row, value, **kwargs):
-        return E('text', unicode(value))
+        return OUT('text', unicode(value))
     
     def __repr__(self):
         return u"<%s '%s'>" % (type(self).__name__, self.name)
@@ -124,7 +124,7 @@ class LookupField(Field):
         return row.list.lists[value['list']].rows_by_id[value['id']]
 
     def _as_xml(self, row, value, follow_lookups=False, **kwargs):
-        value_element = E('lookup', list=value['list'], id=unicode(value['id']))
+        value_element = OUT('lookup', list=value['list'], id=unicode(value['id']))
         if follow_lookups:
             value_element.append(self.lookup(row, value))
         return value_element
@@ -140,7 +140,7 @@ class URLField(Field):
         return {'href': href, 'text': text}
 
     def _as_xml(self, row, value, **kwargs):
-        return E('url', value['text'], href=value['href'])
+        return OUT('url', value['text'], href=value['href'])
 
 
 class ChoiceField(Field):
@@ -164,14 +164,14 @@ class DateTimeField(Field):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
 
     def _as_xml(self, row, value, **kwargs):
-        return E('dateTime', value.isoformat())
+        return OUT('dateTime', value.isoformat())
 
 class UnknownField(Field):
     def parse(self, value):
         return value
 
     def _as_xml(self, row, value, **kwargs):
-        return E('unknown', unicode(value))
+        return OUT('unknown', unicode(value))
 
 class CounterField(Field):
     type_name = 'counter'
@@ -180,7 +180,7 @@ class CounterField(Field):
         return int(value)
 
     def _as_xml(self, row, value, **kwargs):
-        return E('int', unicode(value))
+        return OUT('int', unicode(value))
 
 class UserField(Field):
     group_multi = 2
@@ -190,7 +190,7 @@ class UserField(Field):
         return {'id': value[0], 'name': value[1]}
 
     def _as_xml(self, row, value, **kwargs):
-        return E('user', value['name'], id=unicode(value['id']))
+        return OUT('user', value['name'], id=unicode(value['id']))
 
 
 type_mapping = {'Text': TextField,

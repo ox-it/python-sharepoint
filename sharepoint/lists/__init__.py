@@ -4,9 +4,8 @@ import urllib2
 import urlparse
 
 from lxml import etree
-from lxml.builder import E
 
-from sharepoint.xml import SP, namespaces
+from sharepoint.xml import SP, namespaces, OUT
 from sharepoint.lists.types import type_mapping, default_type
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
@@ -62,7 +61,7 @@ class SharePointLists(object):
             lists = (self[key] for key in keys)
         else:
             lists = self
-        return E.lists(*[l.as_xml(**kwargs) for l in lists])
+        return OUT.lists(*[l.as_xml(**kwargs) for l in lists])
 
 class SharePointList(object):
     def __init__(self, opener, lists, meta):
@@ -123,12 +122,12 @@ class SharePointList(object):
         return self._row_class
 
     def as_xml(self, include_data=True, include_field_definitions=True, **kwargs):
-        list_element = E('list', name=self.name, id=self.id)
+        list_element = OUT('list', name=self.name, id=self.id)
 
         if include_field_definitions:
-            fields_element = E('fields')
+            fields_element = OUT('fields')
             for field in self.fields:
-                field_element = E('field',
+                field_element = OUT('field',
                                   name=field.name,
                                   display_name=field.display_name,
                                   sharepoint_type=field.sharepoint_type,
@@ -141,7 +140,7 @@ class SharePointList(object):
             list_element.append(fields_element)
 
         if include_data:
-            rows_element = E('rows')
+            rows_element = OUT('rows')
             for row in self.rows:
                 rows_element.append(row.as_xml(**kwargs))
             list_element.append(rows_element)
@@ -173,8 +172,8 @@ class SharePointListRow(object):
         return hasattr(self, 'LinkFilename')
     
     def as_xml(self, transclude_xml=False, **kwargs):
-        fields_element = E('fields')
-        row_element = E('row', fields_element, id=unicode(self.id))
+        fields_element = OUT('fields')
+        row_element = OUT('row', fields_element, id=unicode(self.id))
         for field in self.fields:
             try:
                 data = self.data[field.name]
@@ -186,9 +185,9 @@ class SharePointListRow(object):
             try:
                 content = etree.parse(self.open()).getroot()
             except urllib2.HTTPError, e:
-                content_element = E('content', missing='true')
+                content_element = OUT('content', missing='true')
             else:
-                content_element = E('content', content)
+                content_element = OUT('content', content)
             row_element.append(content_element)
         return row_element
 

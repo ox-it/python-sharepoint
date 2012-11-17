@@ -5,6 +5,7 @@ import urlparse
 from lxml import etree
 
 from .lists import SharePointLists
+from .users import SharePointUsers
 from .xml import soap_body, namespaces
 
 class SharePointSite(object):
@@ -31,6 +32,12 @@ class SharePointSite(object):
         if not hasattr(self, '_lists'):
             self._lists = SharePointLists(self.opener)
         return self._lists
+
+    @property
+    def users(self):
+        if not hasattr(self, '_users'):
+            self._users = SharePointUsers(self.opener)
+        return self._users
 
 def basic_auth_opener(url, username, password):
     password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()

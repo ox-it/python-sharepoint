@@ -150,7 +150,8 @@ class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.row_class
 
     def __init__(self, row):
-        self.data = {}
+        self._data = {}
+        self._changed = set()
         for field in self.fields:
             value = field.get(row)
             if value is not None:
@@ -176,7 +177,7 @@ class SharePointListRow(object):
         row_element = OUT('row', fields_element, id=unicode(self.id))
         for field in self.fields:
             try:
-                data = self.data[field.name]
+                data = self._data[field.name]
             except KeyError:
                 pass
             else:

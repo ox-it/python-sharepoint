@@ -4,13 +4,20 @@ import warnings
 from ..xml import OUT
 
 class FieldDescriptor(object):
-    def __init__(self, field):
+    def __init__(self, field, immutable=False):
         self.field = field
+        self.immutable = immutable
     def __get__(self, instance, owner):
         try:
-            return self.field.lookup(instance, instance.data[self.field.name])
+            return self.field.descriptor_get(instance, instance._data[self.field.name])
         except KeyError:
             raise AttributeError
+
+    def __set__(self, instance, value):
+        if self.immutable:
+            raise AttributeError("Field '{0}' is immutable".format(self.field.name))
+        instance._data[self.field.name] = self.field.descriptor_set(instance, value)
+        instance._changed.add(self.field.name)
 
 class MultiFieldDescriptor(object):
     def __init__(self, field):
@@ -18,7 +25,7 @@ class MultiFieldDescriptor(object):
     def __get__(self, instance, owner):
         try:
             values = instance.data[self.field.name]
-            return [self.field.lookup(instance, value) for value in values]
+            return [self.field.descriptor_get(instance, value) for value in values]
         except KeyError:
             raise AttributeError
 
@@ -26,6 +33,7 @@ class Field(object):
     group_multi = None
     multi = None
     type_name = 'unknown'
+    immutable = False
 
     def __init__(self, lists, list_id, xml):
         self.lists, self.list_id = lists, list_id
@@ -76,11 +84,15 @@ class Field(object):
     @property
     def descriptor(self):
         if not hasattr(self, '_descriptor'):
-            self._descriptor = (MultiFieldDescriptor if self.multi else self.descriptor_class)(self)
+            descriptor_class = (MultiFieldDescriptor if self.multi else self.descriptor_class)
+            self._descriptor = descriptor_class(self, self.immutable)
         return self._descriptor
     descriptor_class = FieldDescriptor
 
-    def lookup(self, row, value):
+    def descriptor_get(self, row, value):
+        return value
+
+    def descriptor_set(self, row, value):
         return value
 
     def as_xml(self, row, value, **kwargs):
@@ -123,13 +135,13 @@ class LookupField(Field):
     def parse(self, value):
         return {'list': self.lookup_list, 'id': int(value[0])}
 
-    def lookup(self, row, value):
+    def descriptor_get(self, row, value):
         return row.list.lists[value['list']].rows_by_id[value['id']]
 
     def _as_xml(self, row, value, follow_lookups=False, **kwargs):
         value_element = OUT('lookup', list=value['list'], id=unicode(value['id']))
         if follow_lookups:
-            value_element.append(self.lookup(row, value))
+            value_element.append(self.descriptor_get(row, value).as_xml())
         return value_element
 
     def extra_field_definition(self):
@@ -178,6 +190,7 @@ class UnknownField(Field):
 
 class CounterField(Field):
     type_name = 'counter'
+    immutable = True
 
     def parse(self, value):
         return int(value)

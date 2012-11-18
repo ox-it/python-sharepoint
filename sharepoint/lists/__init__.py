@@ -156,7 +156,10 @@ class SharePointListRow(object):
             value = field.get(row)
             if value is not None:
                 self.data[field.name] = value
-        self.id = self.ID
+        try:
+            self.id = self.ID
+        except AttributeError:
+            self.id = None
 
     def __repr__(self):
         return "<SharePointListRow {0} '{1}'>".format(self.id, self.name)

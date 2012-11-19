@@ -205,12 +205,28 @@ class SharePointList(object):
         response = self.opener.post_soap(LIST_WEBSERVICE, xml,
                                          soapaction='http://schemas.microsoft.com/sharepoint/soap/UpdateListItems')
 
+        for result in response.xpath('.//sp:Result', namespaces=namespaces):
+            batch_id, batch_result = result.attrib['ID'].split(',')
+            row = rows_by_batch_id[int(batch_id)]
+            if batch_result in ('Update', 'New'):
+                row._update(result.xpath('z:row', namespaces=namespaces)[0],
+                            clear=True)
+            else:
+                self._deleted_rows.remove(row)
+
+        assert not self._deleted_rows
+        assert [(not row._changed) for row in self.rows]
+
 class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.row_class
 
     def __init__(self, row={}):
-        self._data = {}
-        self._changed = set()
+        self._update(row, clear=True)
+
+    def _update(self, row, clear=False):
+        if clear:
+            self._data = {}
+            self._changed = set()
         for field in self.fields:
             value = field.parse(row)
             if value is not None:

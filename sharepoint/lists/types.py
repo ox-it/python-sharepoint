@@ -237,6 +237,14 @@ class UserField(Field):
         return {'id': int(value[0]), 'name': value[1]}
     def _unparse(self, value):
         return unicode(value['id'])
+    
+    def descriptor_set(self, row, value):
+        if isinstance(value, int):
+            return {'id': value}
+        elif isinstance(value, dict):
+            return value
+        else:
+            raise AttributeError("UserField must be set to an int or dict.")
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('user', value['name'], id=unicode(value['id']))

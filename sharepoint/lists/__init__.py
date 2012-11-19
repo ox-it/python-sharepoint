@@ -279,7 +279,7 @@ class SharePointListRow(object):
                 pass
             else:
                 fields_element.append(field.as_xml(self, data, **kwargs))
-        if transclude_xml and self.is_file and self.data.get('DocIcon') == 'xml':
+        if transclude_xml and self.is_file and self._data.get('DocIcon') == 'xml':
             try:
                 content = etree.parse(self.open()).getroot()
             except urllib2.HTTPError, e:

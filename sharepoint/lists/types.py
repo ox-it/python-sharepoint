@@ -244,6 +244,26 @@ class UserField(Field):
 class UserMultiField(UserField):
     multi = True
 
+class CalculatedField(Field):
+    group_multi = 2
+    immutable = True
+    
+    types = {'float': float}
+    type_names = {float: 'float',
+                  basestring: 'text',
+                  int: 'int'}
+    def _parse(self, value):
+        type_name, value = value
+        try:
+            return self.types[type_name](value)
+        except KeyError:
+            warnings.warn("Unknown calculated type '%s'" % type_name)
+            return value
+
+    def _as_xml(self, row, value, **kwargs):
+        element_name = self.type_names.get(type(value), 'unknown')
+        return getattr(OUT, element_name)(unicode(value), calculated='true')
+
 type_mapping = {'Text': TextField,
                 'Lookup': LookupField,
                 'LookupMulti': LookupField,
@@ -255,5 +275,6 @@ type_mapping = {'Text': TextField,
                 'Computed': TextField,
                 'Note': TextField,
                 'User': UserField,
-                'UserMulti': UserMultiField}
+                'UserMulti': UserMultiField,
+                'Calculated': CalculatedField}
 default_type = UnknownField

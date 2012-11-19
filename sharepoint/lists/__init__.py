@@ -4,6 +4,7 @@ import urllib2
 import urlparse
 
 from lxml import etree
+from lxml.builder import E
 
 from sharepoint.xml import SP, namespaces, OUT
 from sharepoint.lists.types import type_mapping, default_type
@@ -68,6 +69,7 @@ class SharePointList(object):
         self.opener = opener
         self.lists, self.meta = lists, meta
         self.id = meta['ID'].lower()
+        self._deleted_rows = set()
 
     def __repr__(self):
         return "<SharePointList {0} '{1}'>".format(self.id, self.meta['Title'])
@@ -79,7 +81,7 @@ class SharePointList(object):
     @property
     def settings(self):
         if not hasattr(self, '_settings'):
-            xml = SP.GetList(SP.listName('{0}'.format(self.id)))
+            xml = SP.GetList(SP.listName(self.id))
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             self._settings = response[0][0]
         return self._settings
@@ -87,7 +89,7 @@ class SharePointList(object):
     @property
     def rows(self):
         if not hasattr(self, '_rows'):
-            xml = SP.GetListItems(SP.listName('{0}'.format(self.id)))
+            xml = SP.GetListItems(SP.listName(self.id))
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             xml_rows = list(response[0][0][0])
             self._rows = []
@@ -146,19 +148,99 @@ class SharePointList(object):
             list_element.append(rows_element)
         return list_element
 
+    def append(self, data={}):
+        """
+        Appends a row to the list. Takes a dictionary, returns a row.
+        """
+        row = self.row_class()
+        for key in data:
+            setattr(row, key, data[key])
+        self._rows.append(row)
+        return row
+
+    def remove(self, row):
+        """
+        Removes the row from the list.
+        """
+        self._rows.remove(row)
+        self._deleted_rows.add(row)
+
+    def save(self):
+        """
+        Updates the list with changes.
+        """
+        # Based on the documentation at
+        # http://msdn.microsoft.com/en-us/library/lists.lists.updatelistitems%28v=office.12%29.aspx
+
+        # Note, this ends up un-namespaced. SharePoint doesn't care about
+        # namespaces on this XML node, and will bork if any of these elements
+        # have a namespace prefix. Likewise Method and Field in
+        # SharePointRow.get_batch_method().
+        batches = E.Batch(ListVersion='1', OnError='Continue')
+        # Here's the root element of our SOAP request.
+        xml = SP.UpdateListItems(SP.listName(self.id), SP.updates(batches))
+
+        # rows_by_batch_id contains a mapping from new rows to their batch
+        # IDs, so we can set their IDs when they are returned by SharePoint.
+        rows_by_batch_id, batch_id = {}, 1
+
+        for row in self._rows:
+            batch = row.get_batch_method()
+            if batch is None:
+                continue
+            # Add the batch ID
+            batch.attrib['ID'] = unicode(batch_id)
+            rows_by_batch_id[batch_id] = row
+            batches.append(batch)
+            batch_id += 1
+
+        for row in self._deleted_rows:
+            batch = SP.Method(SP.Field(unicode(row.id),
+                                       Name='ID'),
+                              ID=unicode(batch_id), Cmd='Delete')
+            rows_by_batch_id[batch_id] = row
+            batches.append(batch)
+            batch_id += 1
+
+        response = self.opener.post_soap(LIST_WEBSERVICE, xml,
+                                         soapaction='http://schemas.microsoft.com/sharepoint/soap/UpdateListItems')
+
+        for result in response.xpath('.//sp:Result', namespaces=namespaces):
+            batch_id, batch_result = result.attrib['ID'].split(',')
+            row = rows_by_batch_id[int(batch_id)]
+            if batch_result in ('Update', 'New'):
+                row._update(result.xpath('z:row', namespaces=namespaces)[0],
+                            clear=True)
+            else:
+                self._deleted_rows.remove(row)
+
+        assert not self._deleted_rows
+        assert [(not row._changed) for row in self.rows]
+
 class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.row_class
 
-    def __init__(self, row):
-        self.data = {}
+    def __init__(self, row={}):
+        self._update(row, clear=True)
+
+    def _update(self, row, clear=False):
+        if clear:
+            self._data = {}
+            self._changed = set()
         for field in self.fields:
-            value = field.get(row)
+            value = field.parse(row)
             if value is not None:
-                self.data[field.name] = value
-        self.id = self.ID
+                self._data[field.name] = value
+        try:
+            self.id = self.ID
+        except AttributeError:
+            self.id = None
 
     def __repr__(self):
         return "<SharePointListRow {0} '{1}'>".format(self.id, self.name)
+
+    def delete(self):
+        self.list.remove(self)
 
     @property
     def name(self):
@@ -167,21 +249,37 @@ class SharePointListRow(object):
         except AttributeError:
             return self.LinkFilename
 
+    def get_batch_method(self):
+        """
+        Returns a change batch for SharePoint's UpdateListItems operation.
+        """
+        if not self._changed:
+            return None
+
+        batch_method = E.Method(Cmd='Update' if self.id else 'New')
+        batch_method.append(E.Field(unicode(self.id) if self.id else 'New',
+                                    Name='ID'))
+        for field in self.fields:
+            if field.name in self._changed:
+                value = field.unparse(self._data[field.name] or '')
+                batch_method.append(E.Field(value, Name=field.name))
+        return batch_method
+
     @property
     def is_file(self):
         return hasattr(self, 'LinkFilename')
-    
+
     def as_xml(self, transclude_xml=False, **kwargs):
         fields_element = OUT('fields')
         row_element = OUT('row', fields_element, id=unicode(self.id))
         for field in self.fields:
             try:
-                data = self.data[field.name]
+                data = self._data[field.name]
             except KeyError:
                 pass
             else:
                 fields_element.append(field.as_xml(self, data, **kwargs))
-        if transclude_xml and self.is_file and self.data.get('DocIcon') == 'xml':
+        if transclude_xml and self.is_file and self._data.get('DocIcon') == 'xml':
             try:
                 content = etree.parse(self.open()).getroot()
             except urllib2.HTTPError, e:

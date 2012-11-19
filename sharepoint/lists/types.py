@@ -44,7 +44,7 @@ class Field(object):
         if self.multi is None:
             self.multi = xml.attrib.get('Mult') == 'TRUE'
 
-    def get(self, row):
+    def parse(self, row):
         value = row.attrib.get('ows_' + self.name)
         if value is None:
             return None
@@ -74,11 +74,20 @@ class Field(object):
             # if we have [['']], then remove the last entry
             if values and not values[-1][0]:
                 del values[-1]
-            return map(self.parse, values)
+            return map(self._parse, values)
         else:
-            return self.parse(values[0])
+            return self._parse(values[0])
 
-    def parse(self, value):
+    def unparse(self, value):
+        if self.multi:
+            values = [self._unparse(subvalue).replace(';', ';;') for subvalue in value]
+            return ';#'.join(values)
+        else:
+            return self._unparse(value).replace(';', ';;')
+
+    def _parse(self, value):
+        raise NotImplementedError
+    def _unparse(self, value):
         raise NotImplementedError
 
     @property
@@ -116,7 +125,9 @@ class Field(object):
 class TextField(Field):
     type_name = 'text'
 
-    def parse(self, value):
+    def _parse(self, value):
+        return value
+    def _unparse(self, value):
         return value
 
 class LookupFieldDescriptor(FieldDescriptor):
@@ -132,8 +143,10 @@ class LookupField(Field):
         super(LookupField, self).__init__(lists, list_id, xml)
         self.lookup_list = xml.attrib['List']
 
-    def parse(self, value):
+    def _parse(self, value):
         return {'list': self.lookup_list, 'id': int(value[0])}
+    def _unparse(self, value):
+        return unicode(value['id'])
 
     def descriptor_get(self, row, value):
         return row.list.lists[value['list']].rows_by_id[value['id']]
@@ -150,9 +163,21 @@ class LookupField(Field):
 class URLField(Field):
     type_name = 'url'
 
-    def parse(self, value):
+    def _parse(self, value):
         href, text = value.split(', ', 1)
         return {'href': href, 'text': text}
+    def _unparse(self, value):
+        return '{href}, {text}'.format(**value)
+    
+    def descriptor_set(self, row, value):
+        if isinstance(value, basestring):
+            return {'href': value, 'text': value}
+        elif isinstance(value, tuple) and len(value) == 2:
+            return {'href': value[0], 'text': value[1]}
+        elif isinstance(value, dict):
+            return value
+        else:
+            raise AttributeError("Value must be a basestring, href-text pair, or dict.")
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('url', value['text'], href=value['href'])
@@ -161,13 +186,15 @@ class URLField(Field):
 class ChoiceField(Field):
     type_name = 'choice'
 
-    def parse(self, value):
+    def _parse(self, value):
+        return value
+    def _unparse(self, value):
         return value
 
 class MultiChoiceField(ChoiceField):
     multi = True
 
-    def get(self, xml):
+    def parse(self, xml):
         values = super(MultiChoiceField, self).get(xml)
         if values is not None:
             return [value for value in values if value]
@@ -175,14 +202,18 @@ class MultiChoiceField(ChoiceField):
 class DateTimeField(Field):
     type_name = 'dateTime'
 
-    def parse(self, value):
+    def _parse(self, value):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+    def _unparse(self, value):
+        return value.isoformat(' ')
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('dateTime', value.isoformat())
 
 class UnknownField(Field):
-    def parse(self, value):
+    def _parse(self, value):
+        return value
+    def _unparse(self, value):
         return value
 
     def _as_xml(self, row, value, **kwargs):
@@ -192,7 +223,7 @@ class CounterField(Field):
     type_name = 'counter'
     immutable = True
 
-    def parse(self, value):
+    def _parse(self, value):
         return int(value)
 
     def _as_xml(self, row, value, **kwargs):
@@ -202,8 +233,10 @@ class UserField(Field):
     group_multi = 2
     type_name = 'user'
 
-    def parse(self, value):
-        return {'id': value[0], 'name': value[1]}
+    def _parse(self, value):
+        return {'id': int(value[0]), 'name': value[1]}
+    def _unparse(self, value):
+        return unicode(value['id'])
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('user', value['name'], id=unicode(value['id']))

@@ -4,13 +4,20 @@ import warnings
 from ..xml import OUT
 
 class FieldDescriptor(object):
-    def __init__(self, field):
+    def __init__(self, field, immutable=False):
         self.field = field
+        self.immutable = immutable
     def __get__(self, instance, owner):
         try:
-            return self.field.lookup(instance, instance.data[self.field.name])
+            return self.field.descriptor_get(instance, instance._data[self.field.name])
         except KeyError:
             raise AttributeError
+
+    def __set__(self, instance, value):
+        if self.immutable:
+            raise AttributeError("Field '{0}' is immutable".format(self.field.name))
+        instance._data[self.field.name] = self.field.descriptor_set(instance, value)
+        instance._changed.add(self.field.name)
 
 class MultiFieldDescriptor(object):
     def __init__(self, field):
@@ -18,7 +25,7 @@ class MultiFieldDescriptor(object):
     def __get__(self, instance, owner):
         try:
             values = instance.data[self.field.name]
-            return [self.field.lookup(instance, value) for value in values]
+            return [self.field.descriptor_get(instance, value) for value in values]
         except KeyError:
             raise AttributeError
 
@@ -26,6 +33,7 @@ class Field(object):
     group_multi = None
     multi = None
     type_name = 'unknown'
+    immutable = False
 
     def __init__(self, lists, list_id, xml):
         self.lists, self.list_id = lists, list_id
@@ -36,7 +44,7 @@ class Field(object):
         if self.multi is None:
             self.multi = xml.attrib.get('Mult') == 'TRUE'
 
-    def get(self, row):
+    def parse(self, row):
         value = row.attrib.get('ows_' + self.name)
         if value is None:
             return None
@@ -66,21 +74,34 @@ class Field(object):
             # if we have [['']], then remove the last entry
             if values and not values[-1][0]:
                 del values[-1]
-            return map(self.parse, values)
+            return map(self._parse, values)
         else:
-            return self.parse(values[0])
+            return self._parse(values[0])
 
-    def parse(self, value):
+    def unparse(self, value):
+        if self.multi:
+            values = [self._unparse(subvalue).replace(';', ';;') for subvalue in value]
+            return ';#'.join(values)
+        else:
+            return self._unparse(value).replace(';', ';;')
+
+    def _parse(self, value):
+        raise NotImplementedError
+    def _unparse(self, value):
         raise NotImplementedError
 
     @property
     def descriptor(self):
         if not hasattr(self, '_descriptor'):
-            self._descriptor = (MultiFieldDescriptor if self.multi else self.descriptor_class)(self)
+            descriptor_class = (MultiFieldDescriptor if self.multi else self.descriptor_class)
+            self._descriptor = descriptor_class(self, self.immutable)
         return self._descriptor
     descriptor_class = FieldDescriptor
 
-    def lookup(self, row, value):
+    def descriptor_get(self, row, value):
+        return value
+
+    def descriptor_set(self, row, value):
         return value
 
     def as_xml(self, row, value, **kwargs):
@@ -104,7 +125,9 @@ class Field(object):
 class TextField(Field):
     type_name = 'text'
 
-    def parse(self, value):
+    def _parse(self, value):
+        return value
+    def _unparse(self, value):
         return value
 
 class LookupFieldDescriptor(FieldDescriptor):
@@ -120,16 +143,18 @@ class LookupField(Field):
         super(LookupField, self).__init__(lists, list_id, xml)
         self.lookup_list = xml.attrib['List']
 
-    def parse(self, value):
+    def _parse(self, value):
         return {'list': self.lookup_list, 'id': int(value[0])}
+    def _unparse(self, value):
+        return unicode(value['id'])
 
-    def lookup(self, row, value):
+    def descriptor_get(self, row, value):
         return row.list.lists[value['list']].rows_by_id[value['id']]
 
     def _as_xml(self, row, value, follow_lookups=False, **kwargs):
         value_element = OUT('lookup', list=value['list'], id=unicode(value['id']))
         if follow_lookups:
-            value_element.append(self.lookup(row, value))
+            value_element.append(self.descriptor_get(row, value).as_xml())
         return value_element
 
     def extra_field_definition(self):
@@ -138,9 +163,21 @@ class LookupField(Field):
 class URLField(Field):
     type_name = 'url'
 
-    def parse(self, value):
+    def _parse(self, value):
         href, text = value.split(', ', 1)
         return {'href': href, 'text': text}
+    def _unparse(self, value):
+        return '{href}, {text}'.format(**value)
+    
+    def descriptor_set(self, row, value):
+        if isinstance(value, basestring):
+            return {'href': value, 'text': value}
+        elif isinstance(value, tuple) and len(value) == 2:
+            return {'href': value[0], 'text': value[1]}
+        elif isinstance(value, dict):
+            return value
+        else:
+            raise AttributeError("Value must be a basestring, href-text pair, or dict.")
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('url', value['text'], href=value['href'])
@@ -149,13 +186,15 @@ class URLField(Field):
 class ChoiceField(Field):
     type_name = 'choice'
 
-    def parse(self, value):
+    def _parse(self, value):
+        return value
+    def _unparse(self, value):
         return value
 
 class MultiChoiceField(ChoiceField):
     multi = True
 
-    def get(self, xml):
+    def parse(self, xml):
         values = super(MultiChoiceField, self).get(xml)
         if values is not None:
             return [value for value in values if value]
@@ -163,14 +202,18 @@ class MultiChoiceField(ChoiceField):
 class DateTimeField(Field):
     type_name = 'dateTime'
 
-    def parse(self, value):
+    def _parse(self, value):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+    def _unparse(self, value):
+        return value.isoformat(' ')
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('dateTime', value.isoformat())
 
 class UnknownField(Field):
-    def parse(self, value):
+    def _parse(self, value):
+        return value
+    def _unparse(self, value):
         return value
 
     def _as_xml(self, row, value, **kwargs):
@@ -178,8 +221,9 @@ class UnknownField(Field):
 
 class CounterField(Field):
     type_name = 'counter'
+    immutable = True
 
-    def parse(self, value):
+    def _parse(self, value):
         return int(value)
 
     def _as_xml(self, row, value, **kwargs):
@@ -189,14 +233,44 @@ class UserField(Field):
     group_multi = 2
     type_name = 'user'
 
-    def parse(self, value):
-        return {'id': value[0], 'name': value[1]}
+    def _parse(self, value):
+        return {'id': int(value[0]), 'name': value[1]}
+    def _unparse(self, value):
+        return unicode(value['id'])
+    
+    def descriptor_set(self, row, value):
+        if isinstance(value, int):
+            return {'id': value}
+        elif isinstance(value, dict):
+            return value
+        else:
+            raise AttributeError("UserField must be set to an int or dict.")
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('user', value['name'], id=unicode(value['id']))
 
 class UserMultiField(UserField):
     multi = True
+
+class CalculatedField(Field):
+    group_multi = 2
+    immutable = True
+    
+    types = {'float': float}
+    type_names = {float: 'float',
+                  basestring: 'text',
+                  int: 'int'}
+    def _parse(self, value):
+        type_name, value = value
+        try:
+            return self.types[type_name](value)
+        except KeyError:
+            warnings.warn("Unknown calculated type '%s'" % type_name)
+            return value
+
+    def _as_xml(self, row, value, **kwargs):
+        element_name = self.type_names.get(type(value), 'unknown')
+        return getattr(OUT, element_name)(unicode(value), calculated='true')
 
 type_mapping = {'Text': TextField,
                 'Lookup': LookupField,
@@ -209,5 +283,6 @@ type_mapping = {'Text': TextField,
                 'Computed': TextField,
                 'Note': TextField,
                 'User': UserField,
-                'UserMulti': UserMultiField}
+                'UserMulti': UserMultiField,
+                'Calculated': CalculatedField}
 default_type = UnknownField

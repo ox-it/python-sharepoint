@@ -1,3 +1,4 @@
+import itertools
 import re
 import urllib
 import urllib2
@@ -171,48 +172,58 @@ class SharePointList(object):
         """
         # Based on the documentation at
         # http://msdn.microsoft.com/en-us/library/lists.lists.updatelistitems%28v=office.12%29.aspx
-
-        # Note, this ends up un-namespaced. SharePoint doesn't care about
-        # namespaces on this XML node, and will bork if any of these elements
-        # have a namespace prefix. Likewise Method and Field in
-        # SharePointRow.get_batch_method().
-        batches = E.Batch(ListVersion='1', OnError='Continue')
-        # Here's the root element of our SOAP request.
-        xml = SP.UpdateListItems(SP.listName(self.id), SP.updates(batches))
-
+        
         # rows_by_batch_id contains a mapping from new rows to their batch
         # IDs, so we can set their IDs when they are returned by SharePoint.
-        rows_by_batch_id, batch_id = {}, 1
+        rows_by_batch_id = {}
+        
+        def get_batch_methods():
+            batch_id = 1
+            for row in self._rows:
+                batch = row.get_batch_method()
+                if batch is None:
+                    continue
+                # Add the batch ID
+                batch.attrib['ID'] = unicode(batch_id)
+                rows_by_batch_id[batch_id] = row
+                yield batch
+                batch_id += 1
+    
+            for row in self._deleted_rows:
+                batch = SP.Method(SP.Field(unicode(row.id),
+                                           Name='ID'),
+                                  ID=unicode(batch_id), Cmd='Delete')
+                rows_by_batch_id[batch_id] = row
+                yield batch
+                batch_id += 1
+        
+        # Group batch methods into groups of 150, being a little less
+        # than the 160 
+        batch_method_groups = itertools.islice(get_batch_methods(),
+                                               0, None, 150)
 
-        for row in self._rows:
-            batch = row.get_batch_method()
-            if batch is None:
-                continue
-            # Add the batch ID
-            batch.attrib['ID'] = unicode(batch_id)
-            rows_by_batch_id[batch_id] = row
-            batches.append(batch)
-            batch_id += 1
-
-        for row in self._deleted_rows:
-            batch = SP.Method(SP.Field(unicode(row.id),
-                                       Name='ID'),
-                              ID=unicode(batch_id), Cmd='Delete')
-            rows_by_batch_id[batch_id] = row
-            batches.append(batch)
-            batch_id += 1
-
-        response = self.opener.post_soap(LIST_WEBSERVICE, xml,
-                                         soapaction='http://schemas.microsoft.com/sharepoint/soap/UpdateListItems')
-
-        for result in response.xpath('.//sp:Result', namespaces=namespaces):
-            batch_id, batch_result = result.attrib['ID'].split(',')
-            row = rows_by_batch_id[int(batch_id)]
-            if batch_result in ('Update', 'New'):
-                row._update(result.xpath('z:row', namespaces=namespaces)[0],
-                            clear=True)
-            else:
-                self._deleted_rows.remove(row)
+        for batch_method_group in batch_method_groups:
+            # Note, this ends up un-namespaced. SharePoint doesn't care about
+            # namespaces on this XML node, and will bork if any of these elements
+            # have a namespace prefix. Likewise Method and Field in
+            # SharePointRow.get_batch_method().
+            batches = E.Batch(ListVersion='1', OnError='Continue')
+            # Here's the root element of our SOAP request.
+            xml = SP.UpdateListItems(SP.listName(self.id), SP.updates(batches))
+            
+            batches.extend(batch_method_group)
+            
+            response = self.opener.post_soap(LIST_WEBSERVICE, xml,
+                                             soapaction='http://schemas.microsoft.com/sharepoint/soap/UpdateListItems')
+    
+            for result in response.xpath('.//sp:Result', namespaces=namespaces):
+                batch_id, batch_result = result.attrib['ID'].split(',')
+                row = rows_by_batch_id[int(batch_id)]
+                if batch_result in ('Update', 'New'):
+                    row._update(result.xpath('z:row', namespaces=namespaces)[0],
+                                clear=True)
+                else:
+                    self._deleted_rows.remove(row)
 
         assert not self._deleted_rows
         assert [(not row._changed) for row in self.rows]

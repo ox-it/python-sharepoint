@@ -89,7 +89,7 @@ class SharePointList(object):
     @property
     def rows(self):
         if not hasattr(self, '_rows'):
-            xml = SP.GetListItems(SP.listName(self.id))
+            xml = SP.GetListItems(SP.listName(self.id), SP.rowLimit("100000"))
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             xml_rows = list(response[0][0][0])
             self._rows = []

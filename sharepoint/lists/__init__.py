@@ -95,7 +95,7 @@ class SharePointList(object):
             self._rows = []
             for xml_row in xml_rows:
                 self._rows.append(self.row_class(xml_row))
-        return self._rows
+        return list(self._rows)
 
     @property
     def rows_by_id(self):

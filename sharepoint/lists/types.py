@@ -11,13 +11,16 @@ class FieldDescriptor(object):
         try:
             return self.field.descriptor_get(instance, instance._data[self.field.name])
         except KeyError:
-            raise AttributeError
+            return None
 
     def __set__(self, instance, value):
         if self.immutable:
             raise AttributeError("Field '{0}' is immutable".format(self.field.name))
-        instance._data[self.field.name] = self.field.descriptor_set(instance, value)
-        instance._changed.add(self.field.name)
+
+        new_value = self.field.descriptor_set(instance, value)
+        if new_value != instance._data.get(self.field.name):
+            instance._data[self.field.name] = new_value
+            instance._changed.add(self.field.name)
 
 class MultiFieldDescriptor(object):
     def __init__(self, field):

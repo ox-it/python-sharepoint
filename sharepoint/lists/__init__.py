@@ -201,9 +201,9 @@ class SharePointList(object):
             batch_id += 1
 
         for row in self._deleted_rows:
-            batch = SP.Method(SP.Field(unicode(row.id),
-                                       Name='ID'),
-                              ID=unicode(batch_id), Cmd='Delete')
+            batch = E.Method(E.Field(unicode(row.id),
+                                     Name='ID'),
+                             ID=unicode(batch_id), Cmd='Delete')
             rows_by_batch_id[batch_id] = row
             batches.append(batch)
             batch_id += 1

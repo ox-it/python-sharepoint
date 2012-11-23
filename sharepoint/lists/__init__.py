@@ -208,6 +208,9 @@ class SharePointList(object):
             batches.append(batch)
             batch_id += 1
 
+        if len(batches) == 0:
+            return
+
         response = self.opener.post_soap(LIST_WEBSERVICE, xml,
                                          soapaction='http://schemas.microsoft.com/sharepoint/soap/UpdateListItems')
 

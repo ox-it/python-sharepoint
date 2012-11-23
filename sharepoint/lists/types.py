@@ -37,6 +37,7 @@ class Field(object):
     multi = None
     type_name = 'unknown'
     immutable = False
+    default_value = None
 
     def __init__(self, lists, list_id, xml):
         self.lists, self.list_id = lists, list_id
@@ -50,7 +51,7 @@ class Field(object):
     def parse(self, row):
         value = row.attrib.get('ows_' + self.name)
         if value is None:
-            return None
+            return self.default_value
 
         values, start, pos = [], 0, -1
         while True:
@@ -127,11 +128,18 @@ class Field(object):
 
 class TextField(Field):
     type_name = 'text'
+    default_value = ''
+
+    def descriptor_get(self, row, value):
+        return value or ''
+
+    def descriptor_set(self, row, value):
+        return value or ''
 
     def _parse(self, value):
-        return value
+        return value or ''
     def _unparse(self, value):
-        return value
+        return value or ''
 
 class LookupFieldDescriptor(FieldDescriptor):
     def __get__(self, instance, owner):
@@ -171,7 +179,7 @@ class URLField(Field):
         return {'href': href, 'text': text}
     def _unparse(self, value):
         return '{href}, {text}'.format(**value)
-    
+
     def descriptor_set(self, row, value):
         if isinstance(value, basestring):
             return {'href': value, 'text': value}

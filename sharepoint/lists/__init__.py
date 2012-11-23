@@ -160,7 +160,9 @@ class SharePointList(object):
         elif isinstance(row, self.Row):
             pass
         elif isinstance(row, SharePointListRow):
-            raise TypeError()
+            raise TypeError("row must be a dict or an instance of SharePointList.Row, not SharePointListRow")
+        else:
+            raise TypeError("row must be a dict or an instance of SharePointList.Row")
         self._rows.append(row)
         return row
 

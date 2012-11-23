@@ -94,7 +94,7 @@ class SharePointList(object):
             xml_rows = list(response[0][0][0])
             self._rows = []
             for xml_row in xml_rows:
-                self._rows.append(self.row_class(xml_row))
+                self._rows.append(self.Row(xml_row))
         return list(self._rows)
 
     @property
@@ -115,7 +115,10 @@ class SharePointList(object):
         return self._fields
 
     @property
-    def row_class(self):
+    def Row(self):
+        """
+        The class for a row in this list.
+        """
         if not hasattr(self, '_row_class'):
             attrs = {'fields': self.fields, 'list': self, 'opener': self.opener}
             for field in self.fields:
@@ -152,9 +155,8 @@ class SharePointList(object):
         """
         Appends a row to the list. Takes a dictionary, returns a row.
         """
-        row = self.row_class()
-        for key in data:
-            setattr(row, key, data[key])
+        if not isinstance(data, self.Row):
+            row = self.Row(data)
         self._rows.append(row)
         return row
 
@@ -215,22 +217,28 @@ class SharePointList(object):
                 self._deleted_rows.remove(row)
 
         assert not self._deleted_rows
-        assert [(not row._changed) for row in self.rows]
+        assert not any(row._changed for row in self.rows)
 
 class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.row_class
 
-    def __init__(self, row={}):
+    def __init__(self, row=None):
         self._update(row, clear=True)
 
     def _update(self, row, clear=False):
         if clear:
             self._data = {}
             self._changed = set()
-        for field in self.fields:
-            value = field.parse(row)
-            if value is not None:
-                self._data[field.name] = value
+        if isinstance(row, dict):
+            for key in row:
+                setattr(self, key, row[key])
+        elif isinstance(row, etree._Element):
+            for field in self.fields:
+                value = field.parse(row)
+                if value is not None:
+                    self._data[field.name] = value
+        elif row is not None:
+            raise TypeError("row should be a dict or etree._Element.")
         try:
             self.id = self.ID
         except AttributeError:

@@ -151,12 +151,16 @@ class SharePointList(object):
             list_element.append(rows_element)
         return list_element
 
-    def append(self, data={}):
+    def append(self, row):
         """
         Appends a row to the list. Takes a dictionary, returns a row.
         """
-        if not isinstance(data, self.Row):
-            row = self.Row(data)
+        if isinstance(row, dict):
+            row = self.Row(row)
+        elif isinstance(row, self.Row):
+            pass
+        elif isinstance(row, SharePointListRow):
+            raise TypeError()
         self._rows.append(row)
         return row
 

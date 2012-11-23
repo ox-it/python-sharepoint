@@ -22,16 +22,15 @@ class FieldDescriptor(object):
             instance._data[self.field.name] = new_value
             instance._changed.add(self.field.name)
 
-class MultiFieldDescriptor(object):
-    def __init__(self, field, immutable=False):
-        self.field = field
-        self.immutable = immutable
+class MultiFieldDescriptor(FieldDescriptor):
     def __get__(self, instance, owner):
         try:
             values = instance.data[self.field.name]
             return [self.field.descriptor_get(instance, value) for value in values]
         except KeyError:
             raise AttributeError
+    def __set__(self, instance, value):
+        raise NotImplementedError
 
 class Field(object):
     group_multi = None

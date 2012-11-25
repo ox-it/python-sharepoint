@@ -105,7 +105,10 @@ def main():
             if not options.list_names:
                 sys.stderr.write("You must specify a list. See -h for more information.\n")
                 sys.exit(ExitCodes.MISSING_ARGUMENT)
-        sys.exit(0)
+        xml.append(site.lists.as_xml(options.list_names or None,
+                                     include_data=options.include_data,
+                                     include_field_definitions=options.include_field_definitions,
+                                     transclude_xml=options.transclude_xml))
     else:
         sys.stderr.write("Unsupported action: '%s'. Use -h to discover supported actions.\n")
         sys.exit(1)

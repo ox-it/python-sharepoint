@@ -28,6 +28,15 @@ class SharePointLists(object):
                 self._all_lists.append(SharePointList(self.opener, self, dict(list_element.attrib)))
         return self._all_lists
 
+    def remove(self, list):
+        """
+        Removes a list from the site.
+        """
+        xml = SP.DeleteList(SP.listName(list.id))
+        result = self.opener.post_soap(LIST_WEBSERVICE, xml,
+                                       soapaction='http://schemas.microsoft.com/sharepoint/soap/DeleteList')
+        self.all_lists.remove(list)
+
     def __iter__(self):
         return iter(self.all_lists)
 
@@ -172,6 +181,12 @@ class SharePointList(object):
         """
         self._rows.remove(row)
         self._deleted_rows.add(row)
+
+    def delete(self):
+        """
+        Deletes the list from the site.
+        """
+        self.lists.remove(self)
 
     def save(self):
         """

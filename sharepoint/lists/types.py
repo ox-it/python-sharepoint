@@ -23,8 +23,9 @@ class FieldDescriptor(object):
             instance._changed.add(self.field.name)
 
 class MultiFieldDescriptor(object):
-    def __init__(self, field):
+    def __init__(self, field, immutable=False):
         self.field = field
+        self.immutable = immutable
     def __get__(self, instance, owner):
         try:
             values = instance.data[self.field.name]
@@ -76,7 +77,7 @@ class Field(object):
 
         if self.multi:
             # if we have [['']], then remove the last entry
-            if values and not values[-1][0]:
+            if values and values[-1] and not values[-1][0]:
                 del values[-1]
             return map(self._parse, values)
         else:
@@ -206,7 +207,7 @@ class MultiChoiceField(ChoiceField):
     multi = True
 
     def parse(self, xml):
-        values = super(MultiChoiceField, self).get(xml)
+        values = super(MultiChoiceField, self).parse(xml)
         if values is not None:
             return [value for value in values if value]
 

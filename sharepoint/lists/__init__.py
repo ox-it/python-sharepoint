@@ -43,7 +43,7 @@ class SharePointLists(object):
     
             self._all_lists = []
             for list_element in result.xpath('sp:GetListCollectionResult/sp:Lists/sp:List', namespaces=namespaces):
-                self._all_lists.append(SharePointList(self.opener, self, dict(list_element.attrib)))
+                self._all_lists.append(SharePointList(self.opener, self, list_element))
         return self._all_lists
 
     def remove(self, list):
@@ -72,6 +72,8 @@ class SharePointLists(object):
                          SP.templateID(unicode(template)))
         result = self.opener.post_soap(LIST_WEBSERVICE, xml,
                                        soapaction='http://schemas.microsoft.com/sharepoint/soap/AddList')
+        list_element = result.xpath('sp:AddListResult/sp:List', namespaces=namespaces)[0]
+        self._all_lists.append(SharePointList(self.opener, self, list_element))
 
     def __iter__(self):
         return iter(self.all_lists)
@@ -110,11 +112,12 @@ class SharePointLists(object):
         return OUT.lists(*[l.as_xml(**kwargs) for l in lists])
 
 class SharePointList(object):
-    def __init__(self, opener, lists, meta):
+    def __init__(self, opener, lists, settings):
         self.opener = opener
-        self.lists, self.meta = lists, meta
-        self.id = meta['ID'].lower()
+        self.lists = lists
         self._deleted_rows = set()
+        self._settings, self._meta = settings, None
+        self.id = self.meta['ID'].lower()
 
     def __repr__(self):
         return "<SharePointList {0} '{1}'>".format(self.id, self.meta['Title'])
@@ -124,8 +127,15 @@ class SharePointList(object):
         return self.meta['Title']
 
     @property
+    def meta(self):
+        if not self._meta:
+            settings = self._settings if self._settings is not None else self.settings
+            self._meta = dict(settings.attrib)
+        return self._meta
+
+    @property
     def settings(self):
-        if not hasattr(self, '_settings'):
+        if not self._settings or not len(self._settings):
             xml = SP.GetList(SP.listName(self.id))
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             self._settings = response[0][0]

@@ -2,6 +2,14 @@ from .site import SharePointSite, basic_auth_opener
 
 from .xml import namespaces, OUT
 
+class ExitCodes(object):
+    MISSING_ACTION = 1
+    NO_SUCH_ARGUMENT = 2
+    NO_SUCH_LIST = 3
+    MISSING_ARGUMENT = 4
+    MISSING_CREDENTIALS = 5
+    INVALID_CREDENTIALS = 6
+
 def main():
     from optparse import OptionParser, OptionGroup
     import os
@@ -42,13 +50,13 @@ def main():
 
     if not options.site_url:
         sys.stderr.write("--site-url is a required parameter. Use -h for more information.\n")
-        sys.exit(1)
+        sys.exit(ExitCodes.MISSING_ARGUMENT)
 
     if options.credentials:
         username, password = open(os.path.expanduser(options.credentials)).read().strip().split(':', 1)    
     elif not (options.username and options.password):
         sys.stderr.write("--credentials, or --username and --password must be supplied. Use -h for more information.\n")
-        sys.exit(1)
+        sys.exit(ExitCodes.MISSING_CREDENTIALS)
     else:
         username, password = options.username, options.password
 
@@ -57,7 +65,7 @@ def main():
 
     if not len(args) == 1:
         sys.stderr.write("You must provide an action. Use -h for more information.\n")
-        sys.exit(1)
+        sys.exit(ExitCodes.NO_SUCH_ACTION)
 
     action = args[0]
 

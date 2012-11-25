@@ -82,6 +82,17 @@ def main():
         if options.include_users:
             user_ids = set(xml.xpath('.//sharepoint:user/@id', namespaces=namespaces))
             xml.append(site.users.as_xml(ids=user_ids))
+    elif action == 'deletelists':
+        for list_name in options.list_names:
+            try:
+                site.lists.remove(site.lists[list_name])
+            except KeyError:
+                sys.stderr.write("No such list: '{0}'\n".format(list_name))
+                sys.exit(ExitCodes.NO_SUCH_LIST)
+            if not options.list_names:
+                sys.stderr.write("You must specify a list. See -h for more information.\n")
+                sys.exit(ExitCodes.MISSING_ARGUMENT)
+        sys.exit(0)
     else:
         sys.stderr.write("Unsupported action: '%s'. Use -h to discover supported actions.\n")
         sys.exit(1)

@@ -196,7 +196,7 @@ class MultiChoiceField(ChoiceField):
     multi = True
 
     def parse(self, xml):
-        values = super(MultiChoiceField, self).get(xml)
+        values = super(MultiChoiceField, self).parse(xml)
         if values is not None:
             return [value for value in values if value]
 

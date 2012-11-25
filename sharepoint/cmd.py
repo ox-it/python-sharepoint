@@ -44,6 +44,8 @@ def main():
     list_options.add_option('-T', '--no-transclude-xml', dest='transclude_xml', action='store_false', help="Don't transclude XML (default)")
     list_options.add_option('--include-users', dest='include_users', action='store_true', default=False, help="Include data about referenced users")
     list_options.add_option('--no-include-users', dest='include_users', action='store_false', help="Don't include data about users (default)")
+    list_options.add_option('--description', dest='description', default='', help='Description when creating lists')
+    list_options.add_option('--template', dest='template', default='100', help='List template name')
     parser.add_option_group(list_options)
 
     options, args = parser.parse_args()
@@ -86,6 +88,17 @@ def main():
         for list_name in options.list_names:
             try:
                 site.lists.remove(site.lists[list_name])
+            except KeyError:
+                sys.stderr.write("No such list: '{0}'\n".format(list_name))
+                sys.exit(ExitCodes.NO_SUCH_LIST)
+            if not options.list_names:
+                sys.stderr.write("You must specify a list. See -h for more information.\n")
+                sys.exit(ExitCodes.MISSING_ARGUMENT)
+        sys.exit(0)
+    elif action == 'addlists':
+        for list_name in options.list_names:
+            try:
+                site.lists.create(list_name, options.description, options.template)
             except KeyError:
                 sys.stderr.write("No such list: '{0}'\n".format(list_name))
                 sys.exit(ExitCodes.NO_SUCH_LIST)

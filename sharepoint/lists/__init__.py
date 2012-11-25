@@ -13,6 +13,24 @@ uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{
 
 LIST_WEBSERVICE = '_vti_bin/Lists.asmx'
 
+# From http://msdn.microsoft.com/en-us/library/lists.lists.addlist%28v=office.12%29.aspx
+LIST_TEMPLATES = {
+    'Announcements': 104,
+    'Contacts': 105,
+    'Custom List': 100,
+    'Custom List in Datasheet View': 120,
+    'DataSources': 110,
+    'Discussion Board': 108,
+    'Document Library': 101,
+    'Events': 106,
+    'Form Library': 115,
+    'Issues': 1100,
+    'Links': 103,
+    'Picture Library': 109,
+    'Survey': 102,
+    'Tasks': 107
+}
+
 class SharePointLists(object):
     def __init__(self, opener):
         self.opener = opener
@@ -36,6 +54,24 @@ class SharePointLists(object):
         result = self.opener.post_soap(LIST_WEBSERVICE, xml,
                                        soapaction='http://schemas.microsoft.com/sharepoint/soap/DeleteList')
         self.all_lists.remove(list)
+
+    def create(self, name, description='', template=100):
+        """
+        Creates a new list in the site.
+        """
+        try:
+            template = int(template)
+        except ValueError:
+            template = LIST_TEMPLATES[template]
+        if name in self:
+            raise ValueError("List already exists: '{0}".format(name))
+        if uuid_re.match(name):
+            raise ValueError("Cannot create a list with a UUID as a name")
+        xml = SP.AddList(SP.listName(name),
+                         SP.description(description),
+                         SP.templateID(unicode(template)))
+        result = self.opener.post_soap(LIST_WEBSERVICE, xml,
+                                       soapaction='http://schemas.microsoft.com/sharepoint/soap/AddList')
 
     def __iter__(self):
         return iter(self.all_lists)

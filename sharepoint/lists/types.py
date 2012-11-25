@@ -73,7 +73,7 @@ class Field(object):
 
         if self.multi:
             # if we have [['']], then remove the last entry
-            if values and not values[-1][0]:
+            if values and values[-1] and not values[-1][0]:
                 del values[-1]
             return map(self._parse, values)
         else:

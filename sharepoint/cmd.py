@@ -1,4 +1,5 @@
-from .site import SharePointSite, basic_auth_opener
+from .auth import basic_auth_opener
+from .site import SharePointSite
 
 from .xml import namespaces, OUT
 

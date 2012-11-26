@@ -38,11 +38,3 @@ class SharePointSite(object):
         if not hasattr(self, '_users'):
             self._users = SharePointUsers(self.opener)
         return self._users
-
-def basic_auth_opener(url, username, password):
-    password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
-    password_manager.add_password(None, url, username, password)
-    auth_handler = urllib2.HTTPBasicAuthHandler(password_manager)
-    opener = urllib2.build_opener(auth_handler)
-    return opener
-

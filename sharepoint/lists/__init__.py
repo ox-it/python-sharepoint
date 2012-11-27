@@ -135,7 +135,7 @@ class SharePointList(object):
 
     @property
     def settings(self):
-        if not self._settings or not len(self._settings):
+        if self._settings is None or not len(self._settings):
             xml = SP.GetList(SP.listName(self.id))
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             self._settings = response[0][0]

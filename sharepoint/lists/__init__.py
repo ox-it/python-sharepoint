@@ -144,7 +144,11 @@ class SharePointList(object):
     @property
     def rows(self):
         if not hasattr(self, '_rows'):
-            xml = SP.GetListItems(SP.listName(self.id), SP.rowLimit("100000"))
+            # Request all fields, not just the ones in the default view
+            view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in self.fields))
+            xml = SP.GetListItems(SP.listName(self.id),
+                                  SP.rowLimit("100000"),
+                                  SP.viewFields(view_fields))
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             xml_rows = list(response[0][0][0])
             self._rows = []

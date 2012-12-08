@@ -72,19 +72,18 @@ def main():
 
     action = args[0]
 
-    xml = OUT.site(url=options.site_url)
     if action == 'lists':
-        xml.append(site.lists.as_xml(options.list_names or None,
-                                     include_data=False,
-                                     include_field_definitions=False))
+        xml = site.as_xml(include_lists=True,
+                          list_names=options.list_names or None,
+                          include_list_data=False,
+                          include_field_definitions=False)
     elif action == 'exportlists':
-        xml.append(site.lists.as_xml(options.list_names or None,
-                                     include_data=options.include_data,
-                                     include_field_definitions=options.include_field_definitions,
-                                     transclude_xml=options.transclude_xml))
-        if options.include_users:
-            user_ids = set(xml.xpath('.//sharepoint:user/@id', namespaces=namespaces))
-            xml.append(site.users.as_xml(ids=user_ids))
+        xml = site.as_xml(include_lists=True,
+                          include_users=options.include_users,
+                          list_names=options.list_names or None,
+                          include_list_data=options.include_data,
+                          include_field_definitions=options.include_field_definitions,
+                          transclude_xml=options.transclude_xml)
     elif action == 'deletelists':
         for list_name in options.list_names:
             try:
@@ -106,10 +105,8 @@ def main():
             if not options.list_names:
                 sys.stderr.write("You must specify a list. See -h for more information.\n")
                 sys.exit(ExitCodes.MISSING_ARGUMENT)
-        xml.append(site.lists.as_xml(options.list_names or None,
-                                     include_data=options.include_data,
-                                     include_field_definitions=options.include_field_definitions,
-                                     transclude_xml=options.transclude_xml))
+        xml = site.as_xml(list_names=options.list_names or None,
+                          include_field_definitions=options.include_field_definitions)
     else:
         sys.stderr.write("Unsupported action: '%s'. Use -h to discover supported actions.\n")
         sys.exit(1)

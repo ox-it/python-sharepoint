@@ -104,9 +104,9 @@ class SharePointLists(object):
         else:
             return True
 
-    def as_xml(self, keys=None, **kwargs):
-        if keys is not None:
-            lists = (self[key] for key in keys)
+    def as_xml(self, list_names=None, **kwargs):
+        if list_names is not None:
+            lists = (self[list_name] for list_name in list_names)
         else:
             lists = self
         return OUT.lists(*[l.as_xml(**kwargs) for l in lists])
@@ -185,7 +185,7 @@ class SharePointList(object):
             self._row_class = type('SharePointListRow', (SharePointListRow,), attrs)
         return self._row_class
 
-    def as_xml(self, include_data=True, include_field_definitions=True, **kwargs):
+    def as_xml(self, include_list_data=True, include_field_definitions=True, **kwargs):
         list_element = OUT('list', name=self.name, id=self.id)
 
         if include_field_definitions:
@@ -203,7 +203,7 @@ class SharePointList(object):
                 fields_element.append(field_element)
             list_element.append(fields_element)
 
-        if include_data:
+        if include_list_data:
             rows_element = OUT('rows')
             for row in self.rows:
                 rows_element.append(row.as_xml(**kwargs))

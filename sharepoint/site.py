@@ -6,7 +6,7 @@ from lxml import etree
 
 from .lists import SharePointLists
 from .users import SharePointUsers
-from .xml import soap_body, namespaces
+from .xml import soap_body, namespaces, OUT
 
 class SharePointSite(object):
     def __init__(self, url, opener):
@@ -38,3 +38,14 @@ class SharePointSite(object):
         if not hasattr(self, '_users'):
             self._users = SharePointUsers(self.opener)
         return self._users
+
+    def as_xml(self, include_lists=False, include_users=False, **kwargs):
+        xml = OUT.site(url=self.opener.base_url)
+        if include_lists:
+            xml.append(self.lists.as_xml(**kwargs))
+        if include_users:
+            if 'user_ids' not in kwargs:
+                kwargs['user_ids'] = set(xml.xpath('.//sharepoint:user/@id', namespaces=namespaces))
+            xml.append(self.users.as_xml(**kwargs))
+        return xml
+            

@@ -41,7 +41,7 @@ class SharePointSite(object):
 
     def as_xml(self, include_lists=False, include_users=False, **kwargs):
         xml = OUT.site(url=self.opener.base_url)
-        if include_lists:
+        if include_lists or kwargs.get('list_names'):
             xml.append(self.lists.as_xml(**kwargs))
         if include_users:
             if 'user_ids' not in kwargs:

@@ -33,8 +33,11 @@ class MultiFieldDescriptor(FieldDescriptor):
             return [self.field.descriptor_get(instance, value) for value in values]
         except KeyError:
             raise AttributeError
-    def __set__(self, instance, value):
-        raise NotImplementedError
+    def __set__(self, instance, values):
+        new_value = [self.field.descriptor_set(instance, value) for value in values]
+        if not self.field.is_equal(new_value, instance._data.get(self.field.name)):
+            instance._data[self.field.name] = new_value
+            instance._changed.add(self.field.name)
 
 class Field(object):
     group_multi = None

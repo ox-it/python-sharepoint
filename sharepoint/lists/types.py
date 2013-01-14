@@ -2,6 +2,7 @@ import datetime
 import warnings
 
 from ..xml import OUT
+from ..users import SharePointUser
 from ..utils import decode_entities
 
 class FieldDescriptor(object):
@@ -284,6 +285,8 @@ class UserField(Field):
             return {'id': value}
         elif isinstance(value, dict):
             return value
+        elif isinstance(value, SharePointUser):
+            return {'id': value.id, 'name': value.Name}
         else:
             raise AttributeError("UserField must be set to an int or dict.")
 

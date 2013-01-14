@@ -168,10 +168,11 @@ class SharePointList(object):
     @property
     def fields(self):
         if not hasattr(self, '_fields'):
-            self._fields = []
+            self._fields = {}
             for field in self.settings.xpath('sp:Fields/sp:Field', namespaces=namespaces):
                 field_class = type_mapping.get(field.attrib['Type'], default_type)
-                self._fields.append(field_class(self.lists, self.id, field))
+                field = field_class(self.lists, self.id, field)
+                self._fields[field.name] = field
         return self._fields
 
     @property
@@ -181,7 +182,7 @@ class SharePointList(object):
         """
         if not hasattr(self, '_row_class'):
             attrs = {'fields': self.fields, 'list': self, 'opener': self.opener}
-            for field in self.fields:
+            for field in self.fields.itervalues():
                 attrs[field.name] = field.descriptor
             self._row_class = type('SharePointListRow', (SharePointListRow,), attrs)
         return self._row_class
@@ -191,7 +192,7 @@ class SharePointList(object):
 
         if include_field_definitions:
             fields_element = OUT('fields')
-            for field in self.fields:
+            for field in self.fields.itervalues():
                 field_element = OUT('field',
                                   name=field.name,
                                   display_name=field.display_name,
@@ -316,7 +317,7 @@ class SharePointListRow(object):
             for key in row:
                 setattr(self, key, row[key])
         elif isinstance(row, etree._Element):
-            for field in self.fields:
+            for field in self.fields.itervalues():
                 value = field.parse(row)
                 if value is not None:
                     self._data[field.name] = value
@@ -350,7 +351,7 @@ class SharePointListRow(object):
         batch_method = E.Method(Cmd='Update' if self.id else 'New')
         batch_method.append(E.Field(unicode(self.id) if self.id else 'New',
                                     Name='ID'))
-        for field in self.fields:
+        for field in self.fields.itervalues():
             if field.name in self._changed:
                 value = field.unparse(self._data[field.name] or '')
                 batch_method.append(E.Field(value, Name=field.name))
@@ -363,7 +364,7 @@ class SharePointListRow(object):
     def as_xml(self, transclude_xml=False, **kwargs):
         fields_element = OUT('fields')
         row_element = OUT('row', fields_element, id=unicode(self.id))
-        for field in self.fields:
+        for field in self.fields.itervalues():
             try:
                 data = self._data[field.name]
             except KeyError:

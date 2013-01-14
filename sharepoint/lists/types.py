@@ -190,12 +190,28 @@ class LookupField(Field):
         self.lookup_list = xml.attrib['List']
 
     def _parse(self, value):
-        return {'list': self.lookup_list, 'id': int(value[0])}
+        return {'list': self.lookup_list, 'id': int(value[0]), 'title': value[1]}
     def _unparse(self, value):
-        return unicode(value['id'])
+        return [unicode(value['id']), value['title'] or '']
 
     def descriptor_get(self, row, value):
         return row.list.lists[value['list']].rows_by_id[value['id']]
+    def descriptor_set(self, row, value):
+        from . import SharePointListRow # lets avoid a circular import
+        if isinstance(value, SharePointListRow):
+            return {'list': self.lookup_list, 'id': value.ID, 'title': row.name}
+        elif isinstance(value, int):
+            return {'list': self.lookup_list, 'id': value, 'title': None}
+        elif isinstance(value, dict):
+            value = value.copy()
+            value['list'] = self.lookup_list
+            assert 'id' in value and 'title' in value
+            assert isinstance(value['id'], int)
+        elif isinstance(value, (list, tuple)):
+            assert len(value) == 2
+            return {'list': self.lookup_list, 'id': int(value[0]), 'title': value[1]}
+        else:
+            assert TypeError("value must be a row, a row ID, a dict, or a two-element iterable")
 
     def _as_xml(self, row, value, follow_lookups=False, **kwargs):
         value_element = OUT('lookup', list=value['list'], id=unicode(value['id']))

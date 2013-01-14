@@ -129,22 +129,33 @@ class Field(object):
 class TextField(Field):
     type_name = 'text'
     default_value = ''
+    maximum_length = None
+
+    def __init__(self, lists, list_id, xml):
+        if xml.attrib.get('MaxLength'):
+            self.maximum_length = int(xml.attrib['MaxLength'])
+        self.rich_text = xml.attrib.get('RichText') == 'TRUE'
+        return super(TextField, self).__init__(lists, list_id, xml)
 
     def descriptor_get(self, row, value):
         return value or ''
 
     def descriptor_set(self, row, value):
+        if self.maximum_length and len(value or '') > self.maximum_length:
+            raise ValueError('Value is too long ({0}, instead of {1} characters)'.format(len(value or ''), self.maximum_length))
         return value or ''
+
+    def is_equal(self, new, original):
+        if self.rich_text and \
+           isinstance(new, basestring) and \
+           isinstance(original, basestring):
+            return decode_entities(new) == decode_entities(original)
+        return new == original
 
     def _parse(self, value):
         return value or ''
     def _unparse(self, value):
         return value or ''
-
-class LookupFieldDescriptor(FieldDescriptor):
-    def __get__(self, instance, owner):
-        lookup_list, row_id = instance.data[self.name]
-        return instance.list.lists[lookup_list].rows_by_id[row_id]
 
 class LookupField(Field):
     group_multi = 2

@@ -5,6 +5,8 @@ from ..xml import OUT
 from ..users import SharePointUser
 from ..utils import decode_entities
 
+empty_values = ('', None)
+
 class FieldDescriptor(object):
     def __init__(self, field, immutable=False):
         self.field = field
@@ -52,7 +54,7 @@ class Field(object):
 
     def parse(self, row):
         value = row.attrib.get('ows_' + self.name)
-        if value is None:
+        if value in empty_values:
             return self.default_value
 
         values, start, pos = [], 0, -1
@@ -87,6 +89,9 @@ class Field(object):
     def unparse(self, value):
         if self.multi:
             values = [self._unparse(subvalue).replace(';', ';;') for subvalue in value]
+        if value in empty_values:
+            return ''
+
             return ';#'.join(values)
         else:
             return self._unparse(value).replace(';', ';;')

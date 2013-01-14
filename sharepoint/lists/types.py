@@ -2,6 +2,7 @@ import datetime
 import warnings
 
 from ..xml import OUT
+from ..utils import decode_entities
 
 class FieldDescriptor(object):
     def __init__(self, field, immutable=False):
@@ -18,7 +19,7 @@ class FieldDescriptor(object):
             raise AttributeError("Field '{0}' is immutable".format(self.field.name))
 
         new_value = self.field.descriptor_set(instance, value)
-        if new_value != instance._data.get(self.field.name):
+        if not self.field.is_equal(new_value, instance._data.get(self.field.name)):
             instance._data[self.field.name] = new_value
             instance._changed.add(self.field.name)
 
@@ -107,6 +108,9 @@ class Field(object):
 
     def descriptor_set(self, row, value):
         return value
+
+    def is_equal(self, new, original):
+        return new == original
 
     def as_xml(self, row, value, **kwargs):
         field_element = OUT('field', name=self.name)

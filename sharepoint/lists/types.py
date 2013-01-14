@@ -233,13 +233,18 @@ class URLField(Field):
 
     def descriptor_set(self, row, value):
         if isinstance(value, basestring):
-            return {'href': value, 'text': value}
+            value = {'href': value, 'text': value}
         elif isinstance(value, tuple) and len(value) == 2:
-            return {'href': value[0], 'text': value[1]}
+            value = {'href': value[0], 'text': value[1]}
         elif isinstance(value, dict):
-            return value
+            value = value
+        elif value is None:
+            return None
         else:
-            raise AttributeError("Value must be a basestring, href-text pair, or dict.")
+            raise AttributeError("Value must be a basestring, href-text pair, or dict, not a {0}.".format(value))
+        if not any(value['href'].startswith(prefix) for prefix in ('mailto:', 'http:', 'https:')):
+            raise ValueError("'{0}' is not a valid URL".format(value['href']))
+        return value
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('url', value['text'], href=value['href'])

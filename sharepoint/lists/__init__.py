@@ -8,6 +8,7 @@ from lxml.builder import E
 
 from sharepoint.xml import SP, namespaces, OUT
 from sharepoint.lists.types import type_mapping, default_type
+from sharepoint.exceptions import UpdateFailedError
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
 
@@ -249,7 +250,7 @@ class SharePointList(object):
         # namespaces on this XML node, and will bork if any of these elements
         # have a namespace prefix. Likewise Method and Field in
         # SharePointRow.get_batch_method().
-        batches = E.Batch(ListVersion='1', OnError='Continue')
+        batches = E.Batch(ListVersion='1', OnError='Return')
         # Here's the root element of our SOAP request.
         xml = SP.UpdateListItems(SP.listName(self.id), SP.updates(batches))
 
@@ -284,6 +285,14 @@ class SharePointList(object):
         for result in response.xpath('.//sp:Result', namespaces=namespaces):
             batch_id, batch_result = result.attrib['ID'].split(',')
             row = rows_by_batch_id[int(batch_id)]
+
+            error_code = result.find('sp:ErrorCode', namespaces=namespaces)
+            error_text = result.find('sp:ErrorText', namespaces=namespaces)
+            if error_code is not None and error_code.text != '0x00000000':
+                raise UpdateFailedError(row, batch_result,
+                                        error_code.text,
+                                        error_text.text)
+
             if batch_result in ('Update', 'New'):
                 row._update(result.xpath('z:row', namespaces=namespaces)[0],
                             clear=True)

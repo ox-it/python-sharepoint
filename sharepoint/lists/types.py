@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import warnings
 
 from ..xml import OUT
@@ -60,44 +61,54 @@ class Field(object):
         if value in empty_values:
             return self.default_value
 
-        values, start, pos = [], 0, -1
-        while True:
-            pos = value.find(';', pos+1)
-            if pos == -1:
-                values.append(value[start:].replace(';;', ';'))
-                break
-            elif value[pos:pos+2] == ';;':
-                pos += 2
-                continue
-            elif value[pos:pos+2] == ';#':
-                values.append(value[start:pos].replace(';;', ';'))
-                start = pos = pos + 2
-            else:
-                pos += 2
-                warnings.warn("Upexpected character after ';': {0}".format(value[pos+1]))
-                #raise ValueError("Unexpected character after ';': {0}".format(value[pos+1]))
-                continue
-
-        if self.group_multi is not None:
-            values = [values[i:i+self.group_multi] for i in xrange(0, len(values), self.group_multi)]
-
         if self.multi:
-            # if we have [['']], then remove the last entry
-            if values and values[-1] and not values[-1][0]:
-                del values[-1]
-            return map(self._parse, values)
+            values, start, pos = [], 0, -1
+            while True:
+                pos = value.find(';', pos+1)
+                if pos == -1:
+                    values.append(value[start:].replace(';;', ';'))
+                    break
+                elif value[pos:pos+2] == ';;':
+                    pos += 2
+                    continue
+                elif value[pos:pos+2] == ';#':
+                    values.append(value[start:pos].replace(';;', ';'))
+                    start = pos = pos + 2
+                else:
+                    pos += 2
+                    warnings.warn("Upexpected character after ';': {0}".format(value[pos+1]))
+                    #raise ValueError("Unexpected character after ';': {0}".format(value[pos+1]))
+                    continue
+
+            if self.group_multi is not None:
+                values = [values[i:i+self.group_multi] for i in xrange(0, len(values), self.group_multi)]
+
+                # if we have [['']], then remove the last entry
+                if values and values[-1] and not values[-1][0]:
+                    del values[-1]
+                return map(self._parse, values)
         else:
-            return self._parse(values[0])
+            return self._parse(value)
 
     def unparse(self, value):
-        if self.multi:
-            values = [self._unparse(subvalue).replace(';', ';;') for subvalue in value]
         if value in empty_values:
             return ''
 
+        if self.group_multi is not None and self.multi:
+            value = map(self._unparse, value)
+            assert all(len(v) == self.group_multi for v in value)
+            value = list(itertools.chain(*value))
+        elif self.group_multi is not None:
+            value = self._unparse(value)
+            assert len(value) == self.group_multi
+        elif self.multi:
+            value = map(self._unparse, value)
+
+        if self.group_multi is not None or self.multi:
+            values = [subvalue.replace(';', ';;') for subvalue in value]
             return ';#'.join(values)
         else:
-            return self._unparse(value).replace(';', ';;')
+            return self._unparse(value)
 
     def _parse(self, value):
         raise NotImplementedError
@@ -286,7 +297,7 @@ class UserField(Field):
     def _parse(self, value):
         return {'id': int(value[0]), 'name': value[1]}
     def _unparse(self, value):
-        return unicode(value['id'])
+        return [unicode(value['id']), value.get('name', '')]
     
     def descriptor_set(self, row, value):
         if isinstance(value, int):

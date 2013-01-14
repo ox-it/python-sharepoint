@@ -255,6 +255,21 @@ class CounterField(Field):
     def _as_xml(self, row, value, **kwargs):
         return OUT('int', unicode(value))
 
+class NumberField(Field):
+    type_name = 'number'
+
+    def _parse(self, value):
+        return float(value)
+    def _unparse(self, value):
+        return unicode(value)
+
+    def descriptor_set(self, row, value):
+        return float(value)
+
+    def _as_xml(self, row, value, **kwargs):
+        return OUT('number', unicode(value))
+
+
 class UserField(Field):
     group_multi = 2
     type_name = 'user'
@@ -310,5 +325,6 @@ type_mapping = {'Text': TextField,
                 'Note': TextField,
                 'User': UserField,
                 'UserMulti': UserMultiField,
-                'Calculated': CalculatedField}
+                'Calculated': CalculatedField,
+                'Number': NumberField}
 default_type = UnknownField

@@ -17,6 +17,6 @@ Section: python
 Architecture: all
 Depends: ${misc:Depends},
          ${python:Depends},
-         python
+         python-lxml
 Description: SharePoint library for Python
 

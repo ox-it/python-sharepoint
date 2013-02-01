@@ -56,8 +56,8 @@ class Field(object):
         if self.multi is None:
             self.multi = xml.attrib.get('Mult') == 'TRUE'
 
-    def parse(self, row):
-        value = row.attrib.get('ows_' + self.name)
+    def parse(self, attrib):
+        value = attrib.get('ows_' + self.name)
         if value in empty_values:
             return self.default_value
 

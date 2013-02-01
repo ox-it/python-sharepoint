@@ -1,3 +1,4 @@
+import collections
 import re
 import urllib
 import urllib2
@@ -7,7 +8,7 @@ from lxml import etree
 from lxml.builder import E
 
 from sharepoint.xml import SP, namespaces, OUT
-from sharepoint.lists.types import type_mapping, default_type
+from sharepoint.lists.types import type_mapping, default_type, UserField, LookupField
 from sharepoint.exceptions import UpdateFailedError
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
@@ -145,16 +146,29 @@ class SharePointList(object):
     @property
     def rows(self):
         if not hasattr(self, '_rows'):
-            # Request all fields, not just the ones in the default view
-            view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in self.fields))
-            xml = SP.GetListItems(SP.listName(self.id),
-                                  SP.rowLimit("100000"),
-                                  SP.viewFields(view_fields))
-            response = self.opener.post_soap(LIST_WEBSERVICE, xml)
-            xml_rows = list(response[0][0][0])
+            attribs = collections.defaultdict(dict)
+            field_groups, lookup_count = [[]], 0
+            for field in self.fields.itervalues():
+                if isinstance(field, (UserField, LookupField)):
+                    lookup_count += 1
+                if lookup_count >= 8:
+                    lookup_count = 0
+                    field_groups.append([])
+                field_groups[-1].append(field)
+            for field_group in field_groups:
+                # Request all fields, not just the ones in the default view
+                view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in field_group))
+                xml = SP.GetListItems(SP.listName(self.id),
+                                      SP.rowLimit("100000"),
+                                      SP.viewFields(view_fields))
+                response = self.opener.post_soap(LIST_WEBSERVICE, xml)
+                for row in list(response[0][0][0]):
+                    attrib = attribs[row.attrib['ows_ID']]
+                    attrib.update(row.attrib)
+
             self._rows = []
-            for xml_row in xml_rows:
-                self._rows.append(self.Row(xml_row))
+            for attrib in attribs.itervalues():
+                self._rows.append(self.Row(attrib=attrib))
         return list(self._rows)
 
     @property
@@ -306,21 +320,23 @@ class SharePointList(object):
 class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.Row
 
-    def __init__(self, row=None):
-        self._update(row, clear=True)
+    def __init__(self, row=None, attrib=None):
+        self._update(row, attrib, clear=True)
 
-    def _update(self, row, clear=False):
+    def _update(self, row, attrib=None, clear=False):
         if clear:
             self._data = {}
             self._changed = set()
-        if isinstance(row, dict):
-            for key in row:
-                setattr(self, key, row[key])
-        elif isinstance(row, etree._Element):
+        if isinstance(row, etree._Element):
+            attrib = row.attrib
+        if attrib:
             for field in self.fields.itervalues():
-                value = field.parse(row)
+                value = field.parse(attrib)
                 if value is not None:
                     self._data[field.name] = value
+        elif isinstance(row, dict):
+            for key in row:
+                setattr(self, key, row[key])
         elif row is not None:
             raise TypeError("row should be a dict or etree._Element.")
         try:

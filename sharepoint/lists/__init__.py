@@ -46,6 +46,13 @@ class SharePointLists(object):
             self._all_lists = []
             for list_element in result.xpath('sp:GetListCollectionResult/sp:Lists/sp:List', namespaces=namespaces):
                 self._all_lists.append(SharePointList(self.opener, self, list_element))
+            
+            # Explicitly request information about the UserInfo list.
+            # This can be accessed with the name "User Information List"
+            result = self.opener.post_soap(LIST_WEBSERVICE, SP.GetList(SP.listName("UserInfo")))
+            list_element = result.xpath('.//sp:List', namespaces=namespaces)[0]
+            self._all_lists.append(SharePointList(self.opener, self, list_element))
+
         return self._all_lists
 
     def remove(self, list):

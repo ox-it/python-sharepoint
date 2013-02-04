@@ -310,6 +310,25 @@ class NumberField(Field):
     def _as_xml(self, row, value, **kwargs):
         return OUT('number', unicode(value))
 
+class IntegerField(NumberField):
+    type_name = 'integer'
+    def _parse(self, value):
+        return int(value)
+    def descriptor_set(self, row, value):
+        return int(value)
+    def _as_xml(self, row, value, **kwargs):
+        return OUT('int', unicode(value))
+
+class BooleanField(Field):
+    type_name = 'boolean'
+    def _parse(self, value):
+        return value == '1'
+    def _unparse(self, value):
+        return '1' if value else '0'
+    def descriptor_set(self, row, value):
+        return bool(value)
+    def _as_xml(self, row, value, **kwargs):
+        return OUT('boolean', 'true' if value else 'false')
 
 class UserField(Field):
     group_multi = 2
@@ -369,5 +388,7 @@ type_mapping = {'Text': TextField,
                 'User': UserField,
                 'UserMulti': UserMultiField,
                 'Calculated': CalculatedField,
-                'Number': NumberField}
+                'Number': NumberField,
+                'Integer': IntegerField,
+                'Boolean': BooleanField}
 default_type = UnknownField

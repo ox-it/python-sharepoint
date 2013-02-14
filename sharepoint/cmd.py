@@ -1,8 +1,6 @@
 from .auth import basic_auth_opener
 from .site import SharePointSite
 
-from .xml import namespaces, OUT
-
 class ExitCodes(object):
     MISSING_ACTION = 1
     NO_SUCH_ARGUMENT = 2
@@ -10,6 +8,7 @@ class ExitCodes(object):
     MISSING_ARGUMENT = 4
     MISSING_CREDENTIALS = 5
     INVALID_CREDENTIALS = 6
+    NO_SUCH_ACTION = 7
 
 def main():
     from optparse import OptionParser, OptionGroup
@@ -70,7 +69,7 @@ def main():
         sys.stderr.write("You must provide an action. Use -h for more information.\n")
         sys.exit(ExitCodes.NO_SUCH_ACTION)
 
-    action = args[0]
+    action, xml = args[0], None
 
     if action == 'lists':
         xml = site.as_xml(include_lists=True,
@@ -107,11 +106,23 @@ def main():
                 sys.exit(ExitCodes.MISSING_ARGUMENT)
         xml = site.as_xml(list_names=options.list_names or None,
                           include_field_definitions=options.include_field_definitions)
+    elif action == 'shell':
+        try:
+            from IPython.Shell import IPShellEmbed
+            ipshell = IPShellEmbed()
+            ipshell()
+        except ImportError:
+            import code
+            import readline
+            readline.parse_and_bind("tab: complete")
+            shell = code.InteractiveConsole({'site': site})
+            shell.interact()
     else:
         sys.stderr.write("Unsupported action: '%s'. Use -h to discover supported actions.\n")
         sys.exit(1)
 
-    sys.stdout.write(etree.tostring(xml, pretty_print=options.pretty_print))
+    if xml is not None:
+        sys.stdout.write(etree.tostring(xml, pretty_print=options.pretty_print))
 
 if __name__ == '__main__':
     main()

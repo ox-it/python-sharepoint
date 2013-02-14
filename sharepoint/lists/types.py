@@ -5,6 +5,7 @@ import warnings
 from ..xml import OUT
 from ..users import SharePointUser
 from ..utils import decode_entities
+from . import moderation
 
 empty_values = ('', None)
 
@@ -375,6 +376,15 @@ class CalculatedField(Field):
         element_name = self.type_names.get(type(value), 'unknown')
         return getattr(OUT, element_name)(unicode(value), calculated='true')
 
+class ModerationStatusField(Field):
+    group_multi = 2
+    immutable = True
+    
+    def _parse(self, value):
+        return moderation.moderation_statuses[int(value[0])]
+    def _unparse(self, value):
+        return [unicode(value.value), value.label.title()]
+
 type_mapping = {'Text': TextField,
                 'Lookup': LookupField,
                 'LookupMulti': LookupField,
@@ -390,5 +400,6 @@ type_mapping = {'Text': TextField,
                 'Calculated': CalculatedField,
                 'Number': NumberField,
                 'Integer': IntegerField,
-                'Boolean': BooleanField}
+                'Boolean': BooleanField,
+                'ModStat': ModerationStatusField}
 default_type = UnknownField

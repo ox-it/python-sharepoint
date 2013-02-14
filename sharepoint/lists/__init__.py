@@ -8,6 +8,7 @@ from lxml import etree
 from lxml.builder import E
 
 from sharepoint.xml import SP, namespaces, OUT
+from sharepoint.lists import moderation
 from sharepoint.lists.types import type_mapping, default_type, UserField, LookupField
 from sharepoint.exceptions import UpdateFailedError
 
@@ -149,6 +150,14 @@ class SharePointList(object):
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             self._settings = response[0][0]
         return self._settings
+    
+    @property
+    def moderation(self):
+        if self._meta['EnableModeration'] != 'True':
+            raise AttributeError('Moderation not enabled on this list')
+        elif not hasattr(self, '_moderation'):
+            self._moderation = moderation.Moderation(self)
+        return self._moderation
 
     @property
     def rows(self):

@@ -1,3 +1,12 @@
+python-sharepoint (0.3.1) unstable; urgency=low
+
+  * Initial moderation support
+  * Fix user lookup bug
+  * Added shell command
+  * Can now handle more than 8 lookup columns
+
+ -- Alexander Dutton <alexander.dutton@it.ox.ac.uk>  Fri, 22 Feb 2013 10:40:40 +0000
+
 python-sharepoint (0.3) unstable; urgency=low
 
   * Initial packaging

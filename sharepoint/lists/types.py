@@ -88,6 +88,9 @@ class Field(object):
                 if values and values[-1] and not values[-1][0]:
                     del values[-1]
                 return map(self._parse, values)
+        elif self.group_multi:
+            values = value.split(';#', self.group_multi-1)
+            return self._parse(values)
         else:
             return self._parse(value)
 
@@ -336,6 +339,8 @@ class UserField(Field):
     type_name = 'user'
 
     def _parse(self, value):
+        assert isinstance(value, (list, tuple))
+        assert len(value) == 2
         return {'id': int(value[0]), 'name': value[1]}
     def _unparse(self, value):
         return [unicode(value['id']), value.get('name', '')]

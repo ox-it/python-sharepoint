@@ -361,7 +361,7 @@ class SharePointListRow(object):
             self.id = None
 
     def __repr__(self):
-        return "<SharePointListRow {0} '{1}'>".format(self.id, self.name)
+        return "<SharePointListRow {0} {1}>".format(self.id, repr(self.name))
 
     def delete(self):
         self.list.remove(self)
@@ -414,7 +414,7 @@ class SharePointListRow(object):
         return row_element
 
     def open(self):
-        url = self.opener.relative(self.list.meta['Title'] + '/' + urllib.quote(self.LinkFilename))
+        url = self.opener.relative(self.list.meta['Title'] + '/' + urllib.quote(self.LinkFilename.encode('utf-8')))
         request = urllib2.Request(url)
         request.add_header('Translate', 'f')
         return self.opener.open(request)

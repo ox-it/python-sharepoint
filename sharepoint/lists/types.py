@@ -231,17 +231,23 @@ class URLField(Field):
         href, text = value.split(', ', 1)
         return {'href': href, 'text': text}
     def _unparse(self, value):
-        return '{href}, {text}'.format(**value)
+        if value is None:
+            return ''
+        else:
+            return '{href}, {text}'.format(**value)
 
     def descriptor_set(self, row, value):
-        if isinstance(value, basestring):
+        if not value:
+            value = None
+            return None
+        elif isinstance(value, basestring):
             value = {'href': value, 'text': value}
         elif isinstance(value, tuple) and len(value) == 2:
             value = {'href': value[0], 'text': value[1]}
         elif isinstance(value, dict):
-            value = value
-        elif value is None:
-            return None
+            assert 'href' in value
+            if 'text' not in value:
+                value['text'] = ''
         else:
             raise AttributeError("Value must be a basestring, href-text pair, or dict, not a {0}.".format(value))
         if not any(value['href'].startswith(prefix) for prefix in ('mailto:', 'http:', 'https:')):

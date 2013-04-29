@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-from sharepoint import __version__
+__version__ = '0.3.2'
 
 packages = ['sharepoint',
             'sharepoint.lists']

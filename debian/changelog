@@ -1,3 +1,11 @@
+python-sharepoint (0.3.2) unstable; urgency=low
+
+  * More tolerant handling of missing multi-value fields
+  * More ways to set a URL field
+  * Fixed MANIFEST issues on some platforms.
+
+ -- Alexander Dutton <alexander.dutton@it.ox.ac.uk>  Mon, 29 Apr 2013 13:17:40 +0100
+
 python-sharepoint (0.3.1) unstable; urgency=low
 
   * Initial moderation support

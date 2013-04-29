@@ -30,11 +30,9 @@ class FieldDescriptor(object):
 
 class MultiFieldDescriptor(FieldDescriptor):
     def __get__(self, instance, owner):
-        try:
-            values = instance.data[self.field.name]
-            return [self.field.descriptor_get(instance, value) for value in values]
-        except KeyError:
-            raise AttributeError
+        values = instance._data.get(self.field.name, ())
+        return [self.field.descriptor_get(instance, value) for value in values]
+
     def __set__(self, instance, values):
         new_value = [self.field.descriptor_set(instance, value) for value in values]
         if not self.field.is_equal(new_value, instance._data.get(self.field.name)):

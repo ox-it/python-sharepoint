@@ -110,7 +110,13 @@ class Field(object):
 
         if self.group_multi is not None or self.multi:
             values = [subvalue.replace(';', ';;') for subvalue in value]
-            return ';#'.join(values)
+            if self.group_multi is not None:
+                return ';#'.join(values)
+            else:
+                # It expects ';#foo;#bar;#baz;#'
+                if not values:
+                    return ''
+                return ';#'.join([''] + values + [''])
         else:
             return self._unparse(value)
 

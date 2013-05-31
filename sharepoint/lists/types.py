@@ -321,6 +321,8 @@ class NumberField(Field):
         return unicode(value)
 
     def descriptor_set(self, row, value):
+        if value is None:
+            return None
         return float(value)
 
     def _as_xml(self, row, value, **kwargs):
@@ -331,6 +333,8 @@ class IntegerField(NumberField):
     def _parse(self, value):
         return int(value)
     def descriptor_set(self, row, value):
+        if value is None:
+            return None
         return int(value)
     def _as_xml(self, row, value, **kwargs):
         return OUT('int', unicode(value))
@@ -358,6 +362,8 @@ class UserField(Field):
         return [unicode(value['id']), value.get('name', '')]
     
     def descriptor_set(self, row, value):
+        if value is None:
+            return None
         if isinstance(value, int):
             return {'id': value}
         elif isinstance(value, dict):

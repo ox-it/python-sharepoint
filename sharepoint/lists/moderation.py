@@ -45,6 +45,9 @@ class Moderation(object):
     def set_status(self, rows, status, comment=None):
         rows_by_batch_id, batch_id = {}, 1
         
+        if isinstance(status, int):
+            status = moderation_statuses[status]
+        
         batches = E.Batch(ListVersion='1', OnError='Return')
         # Here's the root element of our SOAP request.
         xml = SP.UpdateListItems(SP.listName(self._list.id), SP.updates(batches))

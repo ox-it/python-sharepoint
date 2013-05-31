@@ -257,6 +257,10 @@ class SharePointList(object):
         self.rows # Make sure self._rows exists.
         self._rows.append(row)
         return row
+    
+    def append_from(self, other_list):
+        for row in other_list.rows:
+            self.append(row.as_row(self.Row))
 
     def remove(self, row):
         """
@@ -413,6 +417,23 @@ class SharePointListRow(object):
                 content_element = OUT('content', content)
             row_element.append(content_element)
         return row_element
+
+    def as_dict(self, with_immutable=True, field_names=None):
+        data = {}
+        for field in self.fields.itervalues():
+            if not with_immutable and field.immutable:
+                continue
+            if field_names is not None and field.name not in field_names:
+                continue
+            data[field.name] = getattr(self, field.name)
+        return data
+
+    def as_row(self, list_or_row):
+        row = list_or_row.Row if isinstance(list_or_row, SharePointList) else list_or_row
+        field_names = set(row.fields) & set(self.fields)
+        field_names -= set(['Attachments', '_Level', 'File_x0020_Type', '_CopySource', '_UIVersionString', 'FileLeafRef', 'Edit', 'LinkFilenameNoMenu', '_EditMenuTableEnd', '_ModerationComments', 'owshiddenversion', 'ContentType', 'ContentTypeId', '_HasCopyDestinations', 'EncodedAbsUrl', 'LinkTitle', 'WorkflowVersion', 'BaseName'])
+        field_names -= set(f for f in field_names if f.startswith('_'))
+        return row(self.as_dict(with_immutable=False, field_names=field_names))
 
     def open(self):
         url = self.opener.relative(self.list.meta['Title'] + '/' + urllib.quote(self.LinkFilename.encode('utf-8')))

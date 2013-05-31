@@ -86,6 +86,8 @@ class Field(object):
                 if values and values[-1] and not values[-1][0]:
                     del values[-1]
                 return map(self._parse, values)
+            else:
+                return [self._parse(v) for v in values if v not in empty_values]
         elif self.group_multi:
             values = value.split(';#', self.group_multi-1)
             return self._parse(values)

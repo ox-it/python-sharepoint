@@ -254,6 +254,7 @@ class SharePointList(object):
             raise TypeError("row must be a dict or an instance of SharePointList.Row, not SharePointListRow")
         else:
             raise TypeError("row must be a dict or an instance of SharePointList.Row")
+        self.rows # Make sure self._rows exists.
         self._rows.append(row)
         return row
 

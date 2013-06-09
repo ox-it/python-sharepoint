@@ -249,7 +249,7 @@ class URLField(Field):
             value = None
             return None
         elif isinstance(value, basestring):
-            value = {'href': value, 'text': value}
+            value = {'href': value, 'text': ''}
         elif isinstance(value, tuple) and len(value) == 2:
             value = {'href': value[0], 'text': value[1]}
         elif isinstance(value, dict):

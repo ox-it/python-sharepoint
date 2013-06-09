@@ -72,6 +72,10 @@ Given a list, you can iterate over its rows::
    for row in sp_list.rows:
        print row.id, row.FieldName
 
+``rows`` is a list, which doesn't help you if you want to find rows by their
+SharePoint row IDs. For this use a list's ``rows_by_id`` attribute, which
+contains a mapping from row ID to row.
+
 You can assign to fields as one would expect. Values will be coerced in
 mostly-sensible ways. Once you're done, you'll want to sync your changes
 using the list's ``save()`` method::

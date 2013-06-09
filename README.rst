@@ -72,7 +72,32 @@ Given a list, you can iterate over its rows::
    for row in sp_list.rows:
        print row.id, row.FieldName
 
-It's not yet possible to modify lists using this library.
+You can assign to fields as one would expect. Values will be coerced in
+mostly-sensible ways. Once you're done, you'll want to sync your changes
+using the list's ``save()`` method::
+
+   sp_list = site.lists['ListName']
+   
+   # Set both the URL and the text
+   sp_list.rows[5].Web_x0020_site = {'url': 'http://example.org/',
+                                     'text': 'Example Website'}
+   # Set the URL; leave the text blank
+   sp_list.rows[6].Web_x0020_site = 'http://example.org/'
+   # Clear the field
+   sp_list.rows[7].Web_x0020_site = None
+   
+   sp_list.save()
+
+Consult the ``descriptor_set()`` methods in ``sharepoint.lists.types`` module
+for more information about setting SharePoint list fields.
+
+
+Document libraries
+~~~~~~~~~~~~~~~~~~
+
+Support for document libraries is limited, but ``SharePointRow`` objects do
+support a ``is_file()`` method and an ``open()`` method for accessing file
+data.
 
 
 Command-line utility
@@ -83,10 +108,10 @@ Here's how to get a list of lists from a SharePoint site::
    $ sharepoint lists -s http://sharepoint.example.org/sites/foo/bar \
                 -u username -p password
 
-And here's how to get an entire list as XML::
+And here's how to get one or more lists as XML::
 
-   $ sharepoint -s http://sharepoint.example.org/sites/foo/bar \
-                -l ListName \
+   $ sharepoint exportlists -s http://sharepoint.example.org/sites/foo/bar \
+                -l FirstListName -l "Second List Name" \
                 -u username -p password
 
 You can also specify a file containing username and password in the format
@@ -94,6 +119,17 @@ You can also specify a file containing username and password in the format
 
    $ sharepoint --credentials=path/to/credentials [...]
 
+If you want to manipulate SharePoint sites from a Python shell, use the
+``shell`` command::
+
+   $ sharepoint shell -s http://sharepoint.example.org/sites/foo/bar \
+                -u username -p password
+
+
+Once you're in the Python shell, there will be a ``site`` variable for the
+site you specified. See above for things to do with your site.
+
 For help (including to see more options to configure the output, use ``-h``::
 
    $ sharepoint -h
+

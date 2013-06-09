@@ -95,7 +95,7 @@ for more information about setting SharePoint list fields.
 Document libraries
 ~~~~~~~~~~~~~~~~~~
 
-Support for document libraries is limited, but ``SharePointRow`` objects do
+Support for document libraries is limited, but ``SharePointListRow`` objects do
 support a ``is_file()`` method and an ``open()`` method for accessing file
 data.
 

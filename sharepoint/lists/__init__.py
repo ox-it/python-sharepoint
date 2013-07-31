@@ -10,29 +10,11 @@ from lxml.builder import E
 from sharepoint.xml import SP, namespaces, OUT
 from sharepoint.lists import moderation
 from sharepoint.lists.types import type_mapping, default_type, UserField, LookupField
+from sharepoint.lists.definitions import LIST_WEBSERVICE, LIST_TEMPLATES
 from sharepoint.exceptions import UpdateFailedError
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
 
-LIST_WEBSERVICE = '_vti_bin/Lists.asmx'
-
-# From http://msdn.microsoft.com/en-us/library/lists.lists.addlist%28v=office.12%29.aspx
-LIST_TEMPLATES = {
-    'Announcements': 104,
-    'Contacts': 105,
-    'Custom List': 100,
-    'Custom List in Datasheet View': 120,
-    'DataSources': 110,
-    'Discussion Board': 108,
-    'Document Library': 101,
-    'Events': 106,
-    'Form Library': 115,
-    'Issues': 1100,
-    'Links': 103,
-    'Picture Library': 109,
-    'Survey': 102,
-    'Tasks': 107
-}
 
 class SharePointLists(object):
     def __init__(self, opener):

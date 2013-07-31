@@ -62,7 +62,7 @@ You can look up lists by ID, or by name::
    # By ID, without braces
    print site.lists['1EF5668C-0AB4-4020-98EF-26325E412C3C']
    # By ID, with braces
-   print site.lists['1EF5668C-0AB4-4020-98EF-26325E412C3C']
+   print site.lists['{1EF5668C-0AB4-4020-98EF-26325E412C3C}']
    # By name
    print site.lists['ListName']
 

@@ -10,6 +10,7 @@ from lxml.builder import E
 from sharepoint.xml import SP, namespaces, OUT
 from sharepoint.lists import moderation
 from sharepoint.lists.types import type_mapping, default_type, UserField, LookupField
+from sharepoint.lists.attachments import SharePointAttachments
 from sharepoint.lists.definitions import LIST_WEBSERVICE, LIST_TEMPLATES
 from sharepoint.exceptions import UpdateFailedError
 
@@ -422,3 +423,9 @@ class SharePointListRow(object):
         request = urllib2.Request(url)
         request.add_header('Translate', 'f')
         return self.opener.open(request)
+
+    @property
+    def attachments(self):
+        if not hasattr(self, '_attachments'):
+            self._attachments = SharePointAttachments(self.opener, self.list.id, self.id)
+        return self._attachments

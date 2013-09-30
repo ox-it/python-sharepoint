@@ -1,6 +1,7 @@
 import functools
 import urllib2
 import urlparse
+import sys
 
 from lxml import etree
 
@@ -25,7 +26,16 @@ class SharePointSite(object):
         if soapaction:
             request.add_header('Soapaction', soapaction)
         response = self.opener.open(request)
-        return etree.parse(response).xpath('/soap:Envelope/soap:Body/*', namespaces=namespaces)[0]
+        try:
+            parsedResponse = etree.parse(response).xpath('/soap:Envelope/soap:Body/*', namespaces=namespaces)[0]
+        except etree.XMLSyntaxError:
+            print "Script Stopped: Error Processing Response From Server"
+            print "Response Code: " + str(response.code)
+            print "Response Content: " + str(response.read())
+            print "Response Headers: " + str(response.info())
+            sys.exit(0)
+        return parsedResponse
+
 
     @property
     def lists(self):

@@ -288,7 +288,7 @@ class DateTimeField(Field):
     def _parse(self, value):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
     def _unparse(self, value):
-        return value.isoformat(' ')
+        return value.isoformat()
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('dateTime', value.isoformat())

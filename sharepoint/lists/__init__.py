@@ -319,7 +319,7 @@ class SharePointList(object):
                 self._deleted_rows.remove(row)
 
         assert not self._deleted_rows
-        assert not any(row._changed for row in self.rows)
+        #assert not any(row._changed for row in self.rows)
 
 class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.Row

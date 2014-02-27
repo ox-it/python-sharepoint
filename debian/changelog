@@ -1,3 +1,11 @@
+python-sharepoint (0.4) unstable; urgency=low
+
+  * Can now copy rows between lists
+  * Initial support for attachments
+  * Bugfixes
+
+ -- Alexander Dutton <alexander.dutton@it.ox.ac.uk>  Thu, 27 Feb 2014 11:12:35 +0000
+
 python-sharepoint (0.3.2) unstable; urgency=low
 
   * More tolerant handling of missing multi-value fields

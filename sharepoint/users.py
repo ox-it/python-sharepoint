@@ -25,7 +25,7 @@ class SharePointUsers(object):
             url = self.opener.base_url + USER_PATH.format(key)
             try:
                 data = self.opener.open(url)
-            except urllib2.HTTPError, e:
+            except urllib2.HTTPError as e:
                 if e.code == 404:
                     self._users[key] = None
                 else:

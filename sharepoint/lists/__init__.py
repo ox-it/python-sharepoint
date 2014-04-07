@@ -394,7 +394,7 @@ class SharePointListRow(object):
         if transclude_xml and self.is_file and self._data.get('DocIcon') == 'xml':
             try:
                 content = etree.parse(self.open()).getroot()
-            except urllib2.HTTPError, e:
+            except urllib2.HTTPError as e:
                 content_element = OUT('content', missing='true')
             else:
                 content_element = OUT('content', content)

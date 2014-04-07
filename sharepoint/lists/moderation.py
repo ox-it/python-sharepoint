@@ -8,6 +8,8 @@ LIST_WEBSERVICE = '_vti_bin/Lists.asmx'
 class ModerationStatus(object):
     def __init__(self, value, label):
         self.value, self.label = value, label
+    def __repr__(self):
+        return self.label
     def __unicode__(self):
         return self.label
 

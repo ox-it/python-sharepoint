@@ -9,6 +9,9 @@ from . import moderation
 
 empty_values = ('', None)
 
+if bytes == str: # Py2
+    str = unicode
+
 class FieldDescriptor(object):
     def __init__(self, field, immutable=False):
         self.field = field
@@ -80,7 +83,7 @@ class Field(object):
                     continue
 
             if self.group_multi is not None:
-                values = [values[i:i+self.group_multi] for i in xrange(0, len(values), self.group_multi)]
+                values = [values[i:i+self.group_multi] for i in range(0, len(values), self.group_multi)]
 
                 # if we have [['']], then remove the last entry
                 if values and values[-1] and not values[-1][0]:
@@ -181,8 +184,8 @@ class TextField(Field):
 
     def is_equal(self, new, original):
         if self.rich_text and \
-           isinstance(new, basestring) and \
-           isinstance(original, basestring):
+           isinstance(new, str) and \
+           isinstance(original, str):
             return decode_entities(new) == decode_entities(original)
         return new == original
 
@@ -248,7 +251,7 @@ class URLField(Field):
         if not value:
             value = None
             return None
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             value = {'href': value, 'text': ''}
         elif isinstance(value, tuple) and len(value) == 2:
             value = {'href': value[0], 'text': value[1]}
@@ -257,7 +260,7 @@ class URLField(Field):
             if 'text' not in value:
                 value['text'] = ''
         else:
-            raise AttributeError("Value must be a basestring, href-text pair, or dict, not a {0}.".format(value))
+            raise AttributeError("Value must be a str, href-text pair, or dict, not a {0}.".format(value))
         if not any(value['href'].startswith(prefix) for prefix in ('mailto:', 'http:', 'https:')):
             raise ValueError("'{0}' is not a valid URL".format(value['href']))
         return value
@@ -385,7 +388,7 @@ class CalculatedField(Field):
     
     types = {'float': float}
     type_names = {float: 'float',
-                  basestring: 'text',
+                  str: 'text',
                   int: 'int'}
     def _parse(self, value):
         type_name, value = value

@@ -1,5 +1,9 @@
-import urllib2
-import urlparse
+try:
+    from urllib.request import HTTPError
+    from urllib.parse import urlparse, parse_qs
+except ImportError:
+    from urllib2 import HTTPError
+    from urlparse import urlparse, parse_qs
 
 from lxml import etree
 from lxml.builder import E
@@ -25,7 +29,7 @@ class SharePointUsers(object):
             url = self.opener.base_url + USER_PATH.format(key)
             try:
                 data = self.opener.open(url)
-            except urllib2.HTTPError as e:
+            except HTTPError as e:
                 if e.code == 404:
                     self._users[key] = None
                 else:
@@ -79,7 +83,7 @@ class SharePointUsers(object):
         account_names = []
         for result in results.xpath('.//srd:Document', namespaces=namespaces):
             link = result.xpath('srd:Action/srd:LinkUrl', namespaces=namespaces)[0].text
-            account_name = urlparse.parse_qs(urlparse.urlparse(link).query)['accountname'][0]
+            account_name = parse_qs(urlparse(link).query)['accountname'][0]
             account_names.append(account_name)
 
         users = self.resolve_principals(account_names)

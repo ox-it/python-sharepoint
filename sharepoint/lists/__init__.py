@@ -1,8 +1,11 @@
 import collections
 import re
-import urllib
-import urllib2
-import urlparse
+try:
+    from urllib.parse import quote
+    from urllib.request import HTTPError, Request
+except ImportError:
+    from urllib import quote
+    from urllib2 import HTTPError, Request
 
 from lxml import etree
 from lxml.builder import E
@@ -15,6 +18,11 @@ from sharepoint.lists.definitions import LIST_WEBSERVICE, LIST_TEMPLATES
 from sharepoint.exceptions import UpdateFailedError
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
+
+try:
+    str = basestring
+except NameError:
+    pass
 
 
 class SharePointLists(object):
@@ -82,7 +90,7 @@ class SharePointLists(object):
                 if list_object.id == key:
                     return list_object
             raise KeyError('No list with ID {0}'.format(key))
-        elif isinstance(key, basestring):
+        elif isinstance(key, str):
             for list_object in self.all_lists:
                 if list_object.meta['Title'] == key:
                     return list_object
@@ -147,7 +155,7 @@ class SharePointList(object):
         if not hasattr(self, '_rows'):
             attribs = collections.defaultdict(dict)
             field_groups, lookup_count = [[]], 0
-            for field in self.fields.itervalues():
+            for field in self.fields.values():
                 if isinstance(field, (UserField, LookupField)):
                     lookup_count += 1
                 if lookup_count >= 8:
@@ -166,7 +174,7 @@ class SharePointList(object):
                     attrib.update(row.attrib)
 
             self._rows = []
-            for attrib in attribs.itervalues():
+            for attrib in attribs.values():
                 self._rows.append(self.Row(attrib=attrib))
         return list(self._rows)
 
@@ -195,7 +203,7 @@ class SharePointList(object):
         """
         if not hasattr(self, '_row_class'):
             attrs = {'fields': self.fields, 'list': self, 'opener': self.opener}
-            for field in self.fields.itervalues():
+            for field in self.fields.values():
                 attrs[field.name] = field.descriptor
             self._row_class = type('SharePointListRow', (SharePointListRow,), attrs)
         return self._row_class
@@ -205,7 +213,7 @@ class SharePointList(object):
 
         if include_field_definitions:
             fields_element = OUT('fields')
-            for field in self.fields.itervalues():
+            for field in self.fields.values():
                 field_element = OUT('field',
                                   name=field.name,
                                   display_name=field.display_name,
@@ -334,7 +342,7 @@ class SharePointListRow(object):
         if isinstance(row, etree._Element):
             attrib = row.attrib
         if attrib:
-            for field in self.fields.itervalues():
+            for field in self.fields.values():
                 value = field.parse(attrib)
                 if value is not None:
                     self._data[field.name] = value
@@ -371,7 +379,7 @@ class SharePointListRow(object):
         batch_method = E.Method(Cmd='Update' if self.id else 'New')
         batch_method.append(E.Field(unicode(self.id) if self.id else 'New',
                                     Name='ID'))
-        for field in self.fields.itervalues():
+        for field in self.fields.values():
             if field.name in self._changed:
                 value = field.unparse(self._data[field.name] or '')
                 batch_method.append(E.Field(value, Name=field.name))
@@ -384,7 +392,7 @@ class SharePointListRow(object):
     def as_xml(self, transclude_xml=False, **kwargs):
         fields_element = OUT('fields')
         row_element = OUT('row', fields_element, id=unicode(self.id))
-        for field in self.fields.itervalues():
+        for field in self.fields.values():
             try:
                 data = self._data[field.name]
             except KeyError:
@@ -394,7 +402,7 @@ class SharePointListRow(object):
         if transclude_xml and self.is_file and self._data.get('DocIcon') == 'xml':
             try:
                 content = etree.parse(self.open()).getroot()
-            except urllib2.HTTPError as e:
+            except HTTPError as e:
                 content_element = OUT('content', missing='true')
             else:
                 content_element = OUT('content', content)
@@ -403,7 +411,7 @@ class SharePointListRow(object):
 
     def as_dict(self, with_immutable=True, field_names=None):
         data = {}
-        for field in self.fields.itervalues():
+        for field in self.fields.values():
             if not with_immutable and field.immutable:
                 continue
             if field_names is not None and field.name not in field_names:
@@ -419,8 +427,8 @@ class SharePointListRow(object):
         return row(self.as_dict(with_immutable=False, field_names=field_names))
 
     def open(self):
-        url = self.opener.relative(self.list.meta['Title'] + '/' + urllib.quote(self.LinkFilename.encode('utf-8')))
-        request = urllib2.Request(url)
+        url = self.opener.relative(self.list.meta['Title'] + '/' + quote(self.LinkFilename.encode('utf-8')))
+        request = Request(url)
         request.add_header('Translate', 'f')
         return self.opener.open(request)
 

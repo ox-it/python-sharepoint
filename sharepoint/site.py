@@ -1,6 +1,10 @@
 import functools
-import urllib2
-import urlparse
+try:
+    from urllib.request import Request
+    from urllib.parse import urljoin
+except ImportError:
+    from urllib2 import Request
+    from urlparse import urljoin
 
 from lxml import etree
 
@@ -16,11 +20,11 @@ class SharePointSite(object):
         self.opener = opener
         self.opener.base_url = url
         self.opener.post_soap = self.post_soap
-        self.opener.relative = functools.partial(urlparse.urljoin, url)
+        self.opener.relative = functools.partial(urljoin, url)
 
     def post_soap(self, url, xml, soapaction=None):
         url = self.opener.relative(url)
-        request = urllib2.Request(url, etree.tostring(soap_body(xml)))
+        request = Request(url, etree.tostring(soap_body(xml)))
         request.add_header('Content-type', 'text/xml; charset=utf-8')
         if soapaction:
             request.add_header('Soapaction', soapaction)

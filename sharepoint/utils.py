@@ -1,4 +1,9 @@
-import re, htmlentitydefs
+import re
+
+try:
+    from html.entities import name2codepoint
+except ImportError:
+    from htmlentitydefs import name2codepoint
 
 ##
 # Removes HTML or XML character references and entities from a text string.
@@ -21,7 +26,7 @@ def decode_entities(text):
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                text = unichr(name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text # leave as is

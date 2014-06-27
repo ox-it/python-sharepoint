@@ -1,3 +1,10 @@
+python-sharepoint (0.4.1) unstable; urgency=low
+
+  * Commandline client now prompts if username/password not passed as
+    arguments
+
+ -- Alexander Dutton <alexander.dutton@it.ox.ac.uk>  Fri, 27 Jun 2014 13:32:56 +0100
+
 python-sharepoint (0.4) unstable; urgency=low
 
   * Can now copy rows between lists

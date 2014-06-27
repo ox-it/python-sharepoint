@@ -56,11 +56,14 @@ def main():
 
     if options.credentials:
         username, password = open(os.path.expanduser(options.credentials)).read().strip().split(':', 1)    
-    elif not (options.username and options.password):
-        sys.stderr.write("--credentials, or --username and --password must be supplied. Use -h for more information.\n")
-        sys.exit(ExitCodes.MISSING_CREDENTIALS)
     else:
         username, password = options.username, options.password
+
+    if not username:
+        username = raw_input("Username: ")
+    if not password:
+        from getpass import getpass
+        password = getpass()
 
     opener = basic_auth_opener(options.site_url, username, password)
     site = SharePointSite(options.site_url, opener)

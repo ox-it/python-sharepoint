@@ -150,32 +150,38 @@ class SharePointList(object):
             self._moderation = moderation.Moderation(self)
         return self._moderation
 
+    def get_rows(self, folder=''):
+        rows = []
+        attribs = collections.defaultdict(dict)
+        field_groups, lookup_count = [[]], 0
+        for field in self.fields.values():
+            if isinstance(field, (UserField, LookupField)):
+                lookup_count += 1
+            if lookup_count >= 8:
+                lookup_count = 0
+                field_groups.append([])
+            field_groups[-1].append(field)
+        for field_group in field_groups:
+            # Request all fields, not just the ones in the default view
+            view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in field_group))
+            #query_options = E.QueryOptions(E.ViewAttributes(Scope="Recursive"))
+            query_options = E.QueryOptions(E.Folder(folder))
+            xml = SP.GetListItems(SP.listName(self.id),
+                                  SP.rowLimit("100000"),
+                                  SP.viewFields(view_fields),
+                                  SP.queryOptions(query_options))
+            response = self.opener.post_soap(LIST_WEBSERVICE, xml)
+            for row in list(response[0][0][0]):
+                attrib = attribs[row.attrib['ows_ID']]
+                attrib.update(row.attrib)
+        for attrib in attribs.values():
+            rows.append(self.Row(attrib=attrib))
+        return list(rows)
+
     @property
     def rows(self):
         if not hasattr(self, '_rows'):
-            attribs = collections.defaultdict(dict)
-            field_groups, lookup_count = [[]], 0
-            for field in self.fields.values():
-                if isinstance(field, (UserField, LookupField)):
-                    lookup_count += 1
-                if lookup_count >= 8:
-                    lookup_count = 0
-                    field_groups.append([])
-                field_groups[-1].append(field)
-            for field_group in field_groups:
-                # Request all fields, not just the ones in the default view
-                view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in field_group))
-                xml = SP.GetListItems(SP.listName(self.id),
-                                      SP.rowLimit("100000"),
-                                      SP.viewFields(view_fields))
-                response = self.opener.post_soap(LIST_WEBSERVICE, xml)
-                for row in list(response[0][0][0]):
-                    attrib = attribs[row.attrib['ows_ID']]
-                    attrib.update(row.attrib)
-
-            self._rows = []
-            for attrib in attribs.values():
-                self._rows.append(self.Row(attrib=attrib))
+            self._rows = self.get_rows()
         return list(self._rows)
 
     @property
@@ -427,7 +433,7 @@ class SharePointListRow(object):
         return row(self.as_dict(with_immutable=False, field_names=field_names))
 
     def open(self):
-        url = self.opener.relative(self.list.meta['Title'] + '/' + quote(self.LinkFilename.encode('utf-8')))
+        url = self.opener.relative(quote(self.list.meta['Title']) + '/' + quote(self.LinkFilename.encode('utf-8')))
         request = Request(url)
         request.add_header('Translate', 'f')
         return self.opener.open(request)

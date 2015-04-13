@@ -427,7 +427,7 @@ class SharePointListRow(object):
         return row(self.as_dict(with_immutable=False, field_names=field_names))
 
     def open(self):
-        url = self.opener.relative(self.list.meta['Title'] + '/' + quote(self.LinkFilename.encode('utf-8')))
+        url = self.opener.relative(quote(self.list.meta['Title']) + '/' + quote(self.LinkFilename.encode('utf-8')))
         request = Request(url)
         request.add_header('Translate', 'f')
         return self.opener.open(request)

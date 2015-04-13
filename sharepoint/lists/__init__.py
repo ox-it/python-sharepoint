@@ -174,8 +174,8 @@ class SharePointList(object):
             for row in list(response[0][0][0]):
                 attrib = attribs[row.attrib['ows_ID']]
                 attrib.update(row.attrib)
-            for attrib in attribs.values():
-                rows.append(self.Row(attrib=attrib))
+        for attrib in attribs.values():
+            rows.append(self.Row(attrib=attrib))
         return list(rows)
 
     @property

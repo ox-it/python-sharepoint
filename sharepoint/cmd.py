@@ -46,6 +46,7 @@ def main():
     list_options.add_option('--no-include-users', dest='include_users', action='store_false', help="Don't include data about users (default)")
     list_options.add_option('--description', dest='description', default='', help='Description when creating lists')
     list_options.add_option('--template', dest='template', default='100', help='List template name')
+    list_options.add_option('--timeout', dest='timeout', default=None, type="float", help='Connection timeout (in seconds)')
     parser.add_option_group(list_options)
 
     options, args = parser.parse_args()
@@ -66,7 +67,7 @@ def main():
         password = getpass()
 
     opener = basic_auth_opener(options.site_url, username, password)
-    site = SharePointSite(options.site_url, opener)
+    site = SharePointSite(options.site_url, opener, timeout=options.timeout)
 
     if not len(args) == 1:
         sys.stderr.write("You must provide an action. Use -h for more information.\n")

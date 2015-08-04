@@ -1,3 +1,9 @@
+python-sharepoint (0.4.2) unstable; urgency=low
+
+  * Add support for specifying connection timeouts
+
+ -- Alexander Dutton <alexander.dutton@it.ox.ac.uk>  Tue, 4 Aug 2014 12:17:49 +0100
+
 python-sharepoint (0.4.1) unstable; urgency=low
 
   * Commandline client now prompts if username/password not passed as

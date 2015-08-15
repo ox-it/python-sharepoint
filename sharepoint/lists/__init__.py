@@ -10,7 +10,7 @@ except ImportError:
 from lxml import etree
 from lxml.builder import E
 
-from sharepoint.xml import SP, namespaces, OUT
+from sharepoint.xml import SP, namespaces, OUT, SPW, MY
 from sharepoint.lists import moderation
 from sharepoint.lists.types import type_mapping, default_type, UserField, LookupField
 from sharepoint.lists.attachments import SharePointAttachments
@@ -18,12 +18,6 @@ from sharepoint.lists.definitions import LIST_WEBSERVICE, LIST_TEMPLATES
 from sharepoint.exceptions import UpdateFailedError
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
-
-try:
-    str = basestring
-except NameError:
-    pass
-
 
 class SharePointLists(object):
     def __init__(self, opener):
@@ -34,11 +28,11 @@ class SharePointLists(object):
         if not hasattr(self, '_all_lists'):
             xml = SP.GetListCollection()
             result = self.opener.post_soap(LIST_WEBSERVICE, xml)
-    
+
             self._all_lists = []
             for list_element in result.xpath('sp:GetListCollectionResult/sp:Lists/sp:List', namespaces=namespaces):
                 self._all_lists.append(SharePointList(self.opener, self, list_element))
-            
+
             # Explicitly request information about the UserInfo list.
             # This can be accessed with the name "User Information List"
             result = self.opener.post_soap(LIST_WEBSERVICE, SP.GetList(SP.listName("UserInfo")))
@@ -90,7 +84,7 @@ class SharePointLists(object):
                 if list_object.id == key:
                     return list_object
             raise KeyError('No list with ID {0}'.format(key))
-        elif isinstance(key, str):
+        elif isinstance(key, basestring):
             for list_object in self.all_lists:
                 if list_object.meta['Title'] == key:
                     return list_object
@@ -141,7 +135,7 @@ class SharePointList(object):
             response = self.opener.post_soap(LIST_WEBSERVICE, xml)
             self._settings = response[0][0]
         return self._settings
-    
+
     @property
     def moderation(self):
         if self._meta['EnableModeration'] != 'True':
@@ -254,7 +248,7 @@ class SharePointList(object):
         self.rows # Make sure self._rows exists.
         self._rows.append(row)
         return row
-    
+
     def append_from(self, other_list):
         for row in other_list.rows:
             self.append(row.as_row(self.Row))
@@ -437,6 +431,28 @@ class SharePointListRow(object):
         request = Request(url)
         request.add_header('Translate', 'f')
         return self.opener.open(request)
+
+    def approve(self, approved=True):
+        if not self.WorkflowInstanceID:
+            raise AttributeError('Not a workflow task')
+        else:
+            if approved:
+                taskstatus = 'Approved'
+            else:
+                taskstatus = 'Rejected'
+            xml = SPW.AlterToDo(SPW.item(self.ServerUrl),
+                            SPW.todoId(str(self.id)),
+                            SPW.todoListId(self.list.id),
+                            SPW.taskData(
+                                MY.myFields(
+                                    MY.TaskStatus(taskstatus),
+                                    MY.Status('Completed'),
+                                    MY.Completed('1'))))
+            result = self.list.opener.post_soap('_vti_bin/workflow.asmx', xml,
+                                    soapaction="http://schemas.microsoft.com/sharepoint/soap/workflow/AlterToDo")
+
+    def reject(self):
+        self.approve(approved=False)
 
     @property
     def attachments(self):

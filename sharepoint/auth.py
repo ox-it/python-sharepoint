@@ -1,4 +1,5 @@
 import base64
+from ntlm import HTTPNtlmAuthHandler
 
 try:
     from urllib.request import BaseHandler, HTTPPasswordMgrWithDefaultRealm, build_opener
@@ -29,5 +30,26 @@ def basic_auth_opener(url, username, password):
     password_manager = HTTPPasswordMgrWithDefaultRealm()
     password_manager.add_password(None, url, username, password)
     auth_handler = PreemptiveBasicAuthHandler(password_manager)
+    opener = build_opener(auth_handler)
+    return opener
+
+
+def ntlm_auth_opener(url, username, password):
+    """Connect to SharePoint using NTLM authentication.
+
+    Args:
+        url: the url for the SharePoint site
+        username: login username
+        password: login password
+    Returns:
+        An OpenDirector object from the urllib or urllib2 package
+        via the build_opener function
+
+
+    """
+
+    password_manager = HTTPPasswordMgrWithDefaultRealm()
+    password_manager.add_password(None, url, username, password)
+    auth_handler = HTTPNtlmAuthHandler.HTTPNtlmAuthHandler(password_manager)
     opener = build_opener(auth_handler)
     return opener

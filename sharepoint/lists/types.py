@@ -153,10 +153,10 @@ class Field(object):
         else:
             field_element.append(self._as_xml(row, value, **kwargs))
         return field_element
-    
+
     def _as_xml(self, row, value, **kwargs):
         return OUT('text', unicode(value))
-    
+
     def __repr__(self):
         return u"<%s '%s'>" % (type(self).__name__, self.name)
 
@@ -363,7 +363,7 @@ class UserField(Field):
         return {'id': int(value[0]), 'name': value[1]}
     def _unparse(self, value):
         return [unicode(value['id']), value.get('name', '')]
-    
+
     def descriptor_set(self, row, value):
         if value is None:
             return None
@@ -385,9 +385,10 @@ class UserMultiField(UserField):
 class CalculatedField(Field):
     group_multi = 2
     immutable = True
-    
+
     types = {'float': float,
-             'string': str}
+             'string': str,
+             'error': str}
     type_names = {float: 'float',
                   str: 'text',
                   int: 'int'}
@@ -406,7 +407,7 @@ class CalculatedField(Field):
 class ModerationStatusField(Field):
     group_multi = 2
     immutable = True
-    
+
     def _parse(self, value):
         return moderation.moderation_statuses[int(value[0])]
     def _unparse(self, value):

@@ -20,10 +20,14 @@ class SharePointAttachments(object):
             yield SharePointAttachment(self, url.text)
 
     def delete(self, url):
-        raise NotImplementedError
+        xml = SP.DeleteAttachment(SP.listName(self.list_id), SP.listItemID(str(self.row_id)), SP.url(url))
+        response = self.opener.post_soap(LIST_WEBSERVICE, xml, 
+                                         soapaction='http://schemas.microsoft.com/sharepoint/soap/DeleteAttachment')
 
     def add(self, filename, content):
-        raise NotImplementedError
+        xml = SP.AddAttachment(SP.listName(self.list_id), SP.listItemID(str(self.row_id)), SP.fileName(filename), SP.attachment(content))
+        response = self.opener.post_soap(LIST_WEBSERVICE, xml,
+                                         soapaction='http://schemas.microsoft.com/sharepoint/soap/AddAttachment')
 
     def open(self, url):
         return self.opener.open(url)

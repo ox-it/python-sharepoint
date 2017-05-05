@@ -2,7 +2,7 @@ from lxml import etree
 from lxml.builder import E
 
 from six import text_type
-from six.moves.urllib.request import HTTPError
+from six.moves.urllib.error import HTTPError
 from six.moves.urllib.parse import urlparse, parse_qs
 
 from .xml import namespaces, OUT, SP, SEARCH, SQ

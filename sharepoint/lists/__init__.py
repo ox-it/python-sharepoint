@@ -3,7 +3,8 @@ import re
 
 from six import text_type
 from six.moves.urllib.parse import quote
-from six.moves.urllib.request import HTTPError, Request
+from six.moves.urllib.request import Request
+from six.moves.urllib.error import HTTPError
 
 from lxml import etree
 from lxml.builder import E

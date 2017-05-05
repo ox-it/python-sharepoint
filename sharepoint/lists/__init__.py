@@ -1,11 +1,9 @@
 import collections
 import re
-try:
-    from urllib.parse import quote
-    from urllib.request import HTTPError, Request
-except ImportError:
-    from urllib import quote
-    from urllib2 import HTTPError, Request
+
+from six import text_type
+from six.moves.urllib.parse import quote
+from six.moves.urllib.request import HTTPError, Request
 
 from lxml import etree
 from lxml.builder import E
@@ -18,11 +16,6 @@ from sharepoint.lists.definitions import LIST_WEBSERVICE, LIST_TEMPLATES
 from sharepoint.exceptions import UpdateFailedError
 
 uuid_re = re.compile(r'^\{?([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})\}?$')
-
-try:
-    str = basestring
-except NameError:
-    pass
 
 
 class SharePointLists(object):
@@ -52,8 +45,8 @@ class SharePointLists(object):
         Removes a list from the site.
         """
         xml = SP.DeleteList(SP.listName(list.id))
-        result = self.opener.post_soap(LIST_WEBSERVICE, xml,
-                                       soapaction='http://schemas.microsoft.com/sharepoint/soap/DeleteList')
+        self.opener.post_soap(LIST_WEBSERVICE, xml,
+                              soapaction='http://schemas.microsoft.com/sharepoint/soap/DeleteList')
         self.all_lists.remove(list)
 
     def create(self, name, description='', template=100):
@@ -70,7 +63,7 @@ class SharePointLists(object):
             raise ValueError("Cannot create a list with a UUID as a name")
         xml = SP.AddList(SP.listName(name),
                          SP.description(description),
-                         SP.templateID(unicode(template)))
+                         SP.templateID(text_type(template)))
         result = self.opener.post_soap(LIST_WEBSERVICE, xml,
                                        soapaction='http://schemas.microsoft.com/sharepoint/soap/AddList')
         list_element = result.xpath('sp:AddListResult/sp:List', namespaces=namespaces)[0]
@@ -111,6 +104,7 @@ class SharePointLists(object):
         else:
             lists = self
         return OUT.lists(*[l.as_xml(**kwargs) for l in lists])
+
 
 class SharePointList(object):
     def __init__(self, opener, lists, settings):
@@ -221,11 +215,11 @@ class SharePointList(object):
             fields_element = OUT('fields')
             for field in self.fields.values():
                 field_element = OUT('field',
-                                  name=field.name,
-                                  display_name=field.display_name,
-                                  sharepoint_type=field.sharepoint_type,
-                                  type=field.type_name,
-                                  **field.extra_field_definition())
+                                    name=field.name,
+                                    display_name=field.display_name,
+                                    sharepoint_type=field.sharepoint_type,
+                                    type=field.type_name,
+                                    **field.extra_field_definition())
                 if field.description:
                     field_element.attrib['description'] = field.description
                 field_element.attrib['multi'] = 'true' if field.multi else 'false'
@@ -251,7 +245,7 @@ class SharePointList(object):
             raise TypeError("row must be a dict or an instance of SharePointList.Row, not SharePointListRow")
         else:
             raise TypeError("row must be a dict or an instance of SharePointList.Row")
-        self.rows # Make sure self._rows exists.
+        self.rows  # Make sure self._rows exists.
         self._rows.append(row)
         return row
     
@@ -296,15 +290,15 @@ class SharePointList(object):
             if batch is None:
                 continue
             # Add the batch ID
-            batch.attrib['ID'] = unicode(batch_id)
+            batch.attrib['ID'] = text_type(batch_id)
             rows_by_batch_id[batch_id] = row
             batches.append(batch)
             batch_id += 1
 
         for row in self._deleted_rows:
-            batch = E.Method(E.Field(unicode(row.id),
+            batch = E.Method(E.Field(text_type(row.id),
                                      Name='ID'),
-                             ID=unicode(batch_id), Cmd='Delete')
+                             ID=text_type(batch_id), Cmd='Delete')
             rows_by_batch_id[batch_id] = row
             batches.append(batch)
             batch_id += 1
@@ -334,6 +328,7 @@ class SharePointList(object):
 
         assert not self._deleted_rows
         assert not any(row._changed for row in self.rows)
+
 
 class SharePointListRow(object):
     # fields, list and opener are added as class attributes in SharePointList.Row
@@ -383,7 +378,7 @@ class SharePointListRow(object):
             return None
 
         batch_method = E.Method(Cmd='Update' if self.id else 'New')
-        batch_method.append(E.Field(unicode(self.id) if self.id else 'New',
+        batch_method.append(E.Field(text_type(self.id) if self.id else 'New',
                                     Name='ID'))
         for field in self.fields.values():
             if field.name in self._changed:
@@ -397,7 +392,7 @@ class SharePointListRow(object):
 
     def as_xml(self, transclude_xml=False, **kwargs):
         fields_element = OUT('fields')
-        row_element = OUT('row', fields_element, id=unicode(self.id))
+        row_element = OUT('row', fields_element, id=text_type(self.id))
         for field in self.fields.values():
             try:
                 data = self._data[field.name]
@@ -408,7 +403,7 @@ class SharePointListRow(object):
         if transclude_xml and self.is_file and self._data.get('DocIcon') == 'xml':
             try:
                 content = etree.parse(self.open()).getroot()
-            except HTTPError as e:
+            except HTTPError:
                 content_element = OUT('content', missing='true')
             else:
                 content_element = OUT('content', content)
@@ -428,8 +423,11 @@ class SharePointListRow(object):
     def as_row(self, list_or_row):
         row = list_or_row.Row if isinstance(list_or_row, SharePointList) else list_or_row
         field_names = set(row.fields) & set(self.fields)
-        field_names -= set(['Attachments', '_Level', 'File_x0020_Type', '_CopySource', '_UIVersionString', 'FileLeafRef', 'Edit', 'LinkFilenameNoMenu', '_EditMenuTableEnd', '_ModerationComments', 'owshiddenversion', 'ContentType', 'ContentTypeId', '_HasCopyDestinations', 'EncodedAbsUrl', 'LinkTitle', 'WorkflowVersion', 'BaseName'])
-        field_names -= set(f for f in field_names if f.startswith('_'))
+        field_names -= {'Attachments', '_Level', 'File_x0020_Type', '_CopySource', '_UIVersionString', 'FileLeafRef',
+                        'Edit', 'LinkFilenameNoMenu', '_EditMenuTableEnd', '_ModerationComments', 'owshiddenversion',
+                        'ContentType', 'ContentTypeId', '_HasCopyDestinations', 'EncodedAbsUrl', 'LinkTitle',
+                        'WorkflowVersion', 'BaseName'}
+        field_names -= {f for f in field_names if f.startswith('_')}
         return row(self.as_dict(with_immutable=False, field_names=field_names))
 
     def open(self):

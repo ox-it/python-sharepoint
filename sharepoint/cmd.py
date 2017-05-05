@@ -1,6 +1,7 @@
 from .auth import basic_auth_opener
 from .site import SharePointSite
 
+
 class ExitCodes(object):
     MISSING_ACTION = 1
     NO_SUCH_ARGUMENT = 2
@@ -9,6 +10,7 @@ class ExitCodes(object):
     MISSING_CREDENTIALS = 5
     INVALID_CREDENTIALS = 6
     NO_SUCH_ACTION = 7
+
 
 def main():
     from optparse import OptionParser, OptionGroup
@@ -35,18 +37,31 @@ def main():
     parser.add_option('-N', '--no-pretty-print', dest='pretty_print', action='store_false')
 
     list_options = OptionGroup(parser, 'List options')
-    list_options.add_option('-l', '--list-name', dest='list_names', help='Name of a list to retrieve. Can be repeated to return multiple lists. If not present at all, all lists will be returned.', action='append')
-    list_options.add_option('-d', '--data', dest='include_data', action='store_true', default=True, help="Include list data in output (default for exportlists)")
-    list_options.add_option('-D', '--no-data', dest='include_data', action='store_false', help="Don't include list data in output")
-    list_options.add_option('-f', '--fields', dest='include_field_definitions', action='store_true', default=True, help="Include field definitions data in output (default for exportlists)")
-    list_options.add_option('-F', '--no-fields', dest='include_field_definitions', action='store_false', help="Don't include field definitions data in output")
-    list_options.add_option('-t', '--transclude-xml', dest='transclude_xml', action='store_true', default=False, help="Transclude linked XML files into row data")
-    list_options.add_option('-T', '--no-transclude-xml', dest='transclude_xml', action='store_false', help="Don't transclude XML (default)")
-    list_options.add_option('--include-users', dest='include_users', action='store_true', default=False, help="Include data about referenced users")
-    list_options.add_option('--no-include-users', dest='include_users', action='store_false', help="Don't include data about users (default)")
-    list_options.add_option('--description', dest='description', default='', help='Description when creating lists')
-    list_options.add_option('--template', dest='template', default='100', help='List template name')
-    list_options.add_option('--timeout', dest='timeout', default=None, type="float", help='Connection timeout (in seconds)')
+    list_options.add_option('-l', '--list-name', dest='list_names', action='append',
+                            help='Name of a list to retrieve. Can be repeated to return multiple lists. If not present '
+                                 'at all, all lists will be returned.')
+    list_options.add_option('-d', '--data', dest='include_data', action='store_true', default=True,
+                            help="Include list data in output (default for exportlists)")
+    list_options.add_option('-D', '--no-data', dest='include_data', action='store_false',
+                            help="Don't include list data in output")
+    list_options.add_option('-f', '--fields', dest='include_field_definitions', action='store_true', default=True,
+                            help="Include field definitions data in output (default for exportlists)")
+    list_options.add_option('-F', '--no-fields', dest='include_field_definitions', action='store_false',
+                            help="Don't include field definitions data in output")
+    list_options.add_option('-t', '--transclude-xml', dest='transclude_xml', action='store_true', default=False,
+                            help="Transclude linked XML files into row data")
+    list_options.add_option('-T', '--no-transclude-xml', dest='transclude_xml', action='store_false',
+                            help="Don't transclude XML (default)")
+    list_options.add_option('--include-users', dest='include_users', action='store_true', default=False,
+                            help="Include data about referenced users")
+    list_options.add_option('--no-include-users', dest='include_users', action='store_false',
+                            help="Don't include data about users (default)")
+    list_options.add_option('--description', dest='description', default='',
+                            help='Description when creating lists')
+    list_options.add_option('--template', dest='template', default='100',
+                            help='List template name')
+    list_options.add_option('--timeout', dest='timeout', default=None, type="float",
+                            help='Connection timeout (in seconds)')
     parser.add_option_group(list_options)
 
     options, args = parser.parse_args()

@@ -2,6 +2,8 @@ import datetime
 import itertools
 import warnings
 
+from six import text_type
+
 from ..xml import OUT
 from ..users import SharePointUser
 from ..utils import decode_entities
@@ -9,13 +11,12 @@ from . import moderation
 
 empty_values = ('', None)
 
-if bytes == str: # Py2
-    str = unicode
 
 class FieldDescriptor(object):
     def __init__(self, field, immutable=False):
         self.field = field
         self.immutable = immutable
+
     def __get__(self, instance, owner):
         try:
             return self.field.descriptor_get(instance, instance._data[self.field.name])
@@ -31,6 +32,7 @@ class FieldDescriptor(object):
             instance._data[self.field.name] = new_value
             instance._changed.add(self.field.name)
 
+
 class MultiFieldDescriptor(FieldDescriptor):
     def __get__(self, instance, owner):
         values = instance._data.get(self.field.name, ())
@@ -41,6 +43,7 @@ class MultiFieldDescriptor(FieldDescriptor):
         if not self.field.is_equal(new_value, instance._data.get(self.field.name)):
             instance._data[self.field.name] = new_value
             instance._changed.add(self.field.name)
+
 
 class Field(object):
     group_multi = None
@@ -79,7 +82,6 @@ class Field(object):
                 else:
                     pos += 2
                     warnings.warn("Upexpected character after ';': {0}".format(value[pos+1]))
-                    #raise ValueError("Unexpected character after ';': {0}".format(value[pos+1]))
                     continue
 
             if self.group_multi is not None:
@@ -125,6 +127,7 @@ class Field(object):
 
     def _parse(self, value):
         raise NotImplementedError
+
     def _unparse(self, value):
         raise NotImplementedError
 
@@ -155,13 +158,14 @@ class Field(object):
         return field_element
     
     def _as_xml(self, row, value, **kwargs):
-        return OUT('text', unicode(value))
+        return OUT('text', text_type(value))
     
     def __repr__(self):
         return u"<%s '%s'>" % (type(self).__name__, self.name)
 
     def extra_field_definition(self):
         return {}
+
 
 class TextField(Field):
     type_name = 'text'
@@ -172,14 +176,15 @@ class TextField(Field):
         if xml.attrib.get('MaxLength'):
             self.maximum_length = int(xml.attrib['MaxLength'])
         self.rich_text = xml.attrib.get('RichText') == 'TRUE'
-        return super(TextField, self).__init__(lists, list_id, xml)
+        super(TextField, self).__init__(lists, list_id, xml)
 
     def descriptor_get(self, row, value):
         return value or ''
 
     def descriptor_set(self, row, value):
         if self.maximum_length and len(value or '') > self.maximum_length:
-            raise ValueError('Value is too long ({0}, instead of {1} characters)'.format(len(value or ''), self.maximum_length))
+            raise ValueError('Value is too long ({0}, instead of {1} characters)'.format(len(value or ''),
+                                                                                         self.maximum_length))
         return value or ''
 
     def is_equal(self, new, original):
@@ -191,8 +196,10 @@ class TextField(Field):
 
     def _parse(self, value):
         return value or ''
+
     def _unparse(self, value):
         return value or ''
+
 
 class LookupField(Field):
     group_multi = 2
@@ -204,13 +211,15 @@ class LookupField(Field):
 
     def _parse(self, value):
         return {'list': self.lookup_list, 'id': int(value[0]), 'title': value[1]}
+
     def _unparse(self, value):
-        return [unicode(value['id']), value['title'] or '']
+        return [text_type(value['id']), value['title'] or '']
 
     def descriptor_get(self, row, value):
         return row.list.lists[value['list']].rows_by_id[value['id']]
+
     def descriptor_set(self, row, value):
-        from . import SharePointListRow # lets avoid a circular import
+        from . import SharePointListRow  # lets avoid a circular import
         if isinstance(value, SharePointListRow):
             return {'list': self.lookup_list, 'id': value.ID, 'title': row.name}
         elif isinstance(value, int):
@@ -227,7 +236,7 @@ class LookupField(Field):
             assert TypeError("value must be a row, a row ID, a dict, or a two-element iterable")
 
     def _as_xml(self, row, value, follow_lookups=False, **kwargs):
-        value_element = OUT('lookup', list=value['list'], id=unicode(value['id']))
+        value_element = OUT('lookup', list=value['list'], id=text_type(value['id']))
         if follow_lookups:
             value_element.append(self.descriptor_get(row, value).as_xml())
         return value_element
@@ -235,12 +244,14 @@ class LookupField(Field):
     def extra_field_definition(self):
         return {'list': self.lookup_list}
 
+
 class URLField(Field):
     type_name = 'url'
 
     def _parse(self, value):
         href, text = value.split(', ', 1)
         return {'href': href, 'text': text}
+
     def _unparse(self, value):
         if value is None:
             return ''
@@ -249,7 +260,6 @@ class URLField(Field):
 
     def descriptor_set(self, row, value):
         if not value:
-            value = None
             return None
         elif isinstance(value, str):
             value = {'href': value, 'text': ''}
@@ -260,7 +270,7 @@ class URLField(Field):
             if 'text' not in value:
                 value['text'] = ''
         else:
-            raise AttributeError("Value must be a str, href-text pair, or dict, not a {0}.".format(value))
+            raise AttributeError("Value must be a str, href-text pair, or dict, not a {0}.".format(type(value)))
         if not any(value['href'].startswith(prefix) for prefix in ('mailto:', 'http:', 'https:')):
             raise ValueError("'{0}' is not a valid URL".format(value['href']))
         return value
@@ -274,8 +284,10 @@ class ChoiceField(Field):
 
     def _parse(self, value):
         return value
+
     def _unparse(self, value):
         return value
+
 
 class MultiChoiceField(ChoiceField):
     multi = True
@@ -285,25 +297,30 @@ class MultiChoiceField(ChoiceField):
         if values is not None:
             return [value for value in values if value]
 
+
 class DateTimeField(Field):
     type_name = 'dateTime'
 
     def _parse(self, value):
         return datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+
     def _unparse(self, value):
         return value.isoformat(' ')
 
     def _as_xml(self, row, value, **kwargs):
         return OUT('dateTime', value.isoformat())
 
+
 class UnknownField(Field):
     def _parse(self, value):
         return value
+
     def _unparse(self, value):
         return value
 
     def _as_xml(self, row, value, **kwargs):
-        return OUT('unknown', unicode(value))
+        return OUT('unknown', text_type(value))
+
 
 class CounterField(Field):
     type_name = 'counter'
@@ -313,15 +330,17 @@ class CounterField(Field):
         return int(value)
 
     def _as_xml(self, row, value, **kwargs):
-        return OUT('int', unicode(value))
+        return OUT('int', text_type(value))
+
 
 class NumberField(Field):
     type_name = 'number'
 
     def _parse(self, value):
         return float(value)
+
     def _unparse(self, value):
-        return unicode(value)
+        return text_type(value)
 
     def descriptor_set(self, row, value):
         if value is None:
@@ -329,29 +348,39 @@ class NumberField(Field):
         return float(value)
 
     def _as_xml(self, row, value, **kwargs):
-        return OUT('number', unicode(value))
+        return OUT('number', text_type(value))
+
 
 class IntegerField(NumberField):
     type_name = 'integer'
+
     def _parse(self, value):
         return int(value)
+
     def descriptor_set(self, row, value):
         if value is None:
             return None
         return int(value)
+
     def _as_xml(self, row, value, **kwargs):
-        return OUT('int', unicode(value))
+        return OUT('int', text_type(value))
+
 
 class BooleanField(Field):
     type_name = 'boolean'
+
     def _parse(self, value):
         return value == '1'
+
     def _unparse(self, value):
         return '1' if value else '0'
+
     def descriptor_set(self, row, value):
         return bool(value)
+
     def _as_xml(self, row, value, **kwargs):
         return OUT('boolean', 'true' if value else 'false')
+
 
 class UserField(Field):
     group_multi = 2
@@ -361,10 +390,12 @@ class UserField(Field):
         assert isinstance(value, (list, tuple))
         assert len(value) == 2
         return {'id': int(value[0]), 'name': value[1]}
+
     def _unparse(self, value):
-        return [unicode(value['id']), value.get('name', '')]
+        return [text_type(value['id']), value.get('name', '')]
     
     def descriptor_set(self, row, value):
+        print(value, type(value))
         if value is None:
             return None
         if isinstance(value, int):
@@ -377,10 +408,12 @@ class UserField(Field):
             raise AttributeError("UserField must be set to an int or dict.")
 
     def _as_xml(self, row, value, **kwargs):
-        return OUT('user', value['name'], id=unicode(value['id']))
+        return OUT('user', value['name'], id=text_type(value['id']))
+
 
 class UserMultiField(UserField):
     multi = True
+
 
 class CalculatedField(Field):
     group_multi = 2
@@ -390,6 +423,7 @@ class CalculatedField(Field):
     type_names = {float: 'float',
                   str: 'text',
                   int: 'int'}
+
     def _parse(self, value):
         type_name, value = value
         try:
@@ -400,7 +434,8 @@ class CalculatedField(Field):
 
     def _as_xml(self, row, value, **kwargs):
         element_name = self.type_names.get(type(value), 'unknown')
-        return getattr(OUT, element_name)(unicode(value), calculated='true')
+        return getattr(OUT, element_name)(text_type(value), calculated='true')
+
 
 class ModerationStatusField(Field):
     group_multi = 2
@@ -408,8 +443,10 @@ class ModerationStatusField(Field):
     
     def _parse(self, value):
         return moderation.moderation_statuses[int(value[0])]
+
     def _unparse(self, value):
-        return [unicode(value.value), value.label.title()]
+        return [text_type(value.value), value.label.title()]
+
 
 type_mapping = {'Text': TextField,
                 'Lookup': LookupField,

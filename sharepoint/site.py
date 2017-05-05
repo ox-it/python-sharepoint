@@ -1,16 +1,14 @@
 import functools
-try:
-    from urllib.request import Request
-    from urllib.parse import urljoin
-except ImportError:
-    from urllib2 import Request
-    from urlparse import urljoin
 
 from lxml import etree
+
+from six.moves.urllib.request import Request
+from six.moves.urllib.parse import urljoin
 
 from .lists import SharePointLists
 from .users import SharePointUsers
 from .xml import soap_body, namespaces, OUT
+
 
 class SharePointSite(object):
     def __init__(self, url, opener, timeout=None):
@@ -53,4 +51,3 @@ class SharePointSite(object):
                 kwargs['user_ids'] = set(xml.xpath('.//sharepoint:user/@id', namespaces=namespaces))
             xml.append(self.users.as_xml(**kwargs))
         return xml
-            

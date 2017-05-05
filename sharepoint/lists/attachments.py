@@ -1,6 +1,7 @@
 from sharepoint.xml import namespaces, SP
 from sharepoint.lists.definitions import LIST_WEBSERVICE
 
+
 class SharePointAttachments(object):
     def __init__(self, opener, list_id, row_id):
         self.opener = opener
@@ -14,8 +15,9 @@ class SharePointAttachments(object):
         """
         xml = SP.GetAttachmentCollection(SP.listName(self.list_id),
                                          SP.listItemID(str(self.row_id)))
-        response = self.opener.post_soap(LIST_WEBSERVICE, xml,
-                                         soapaction='http://schemas.microsoft.com/sharepoint/soap/GetAttachmentCollection')
+        response = self.opener.post_soap(
+            LIST_WEBSERVICE, xml,
+            soapaction='http://schemas.microsoft.com/sharepoint/soap/GetAttachmentCollection')
         for url in response.xpath('//sp:Attachment', namespaces=namespaces):
             yield SharePointAttachment(self, url.text)
 
@@ -27,6 +29,7 @@ class SharePointAttachments(object):
 
     def open(self, url):
         return self.opener.open(url)
+
 
 class SharePointAttachment(object):
     def __init__(self, attachments, url):

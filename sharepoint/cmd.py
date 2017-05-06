@@ -76,7 +76,9 @@ def main():
         username, password = options.username, options.password
 
     if not username:
-        username = raw_input("Username: ")
+        sys.stdout.write("Username: ")
+        sys.stdout.flush()
+        username = sys.stdin.readline().strip()
     if not password:
         from getpass import getpass
         password = getpass()

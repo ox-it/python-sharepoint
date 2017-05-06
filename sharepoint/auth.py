@@ -2,6 +2,7 @@ import base64
 
 from six.moves.urllib.request import BaseHandler, HTTPPasswordMgrWithDefaultRealm, build_opener
 
+from ntlm import HTTPNtlmAuthHandler
 
 class PreemptiveBasicAuthHandler(BaseHandler):
 
@@ -28,3 +29,9 @@ def basic_auth_opener(url, username, password):
     auth_handler = PreemptiveBasicAuthHandler(password_manager)
     opener = build_opener(auth_handler)
     return opener
+
+def ntlm_auth_opener(url, user, password):
+	password_manager = HTTPPasswordMgrWithDefaultRealm()
+	password_manager.add_password(None, url, user, password)
+	auth_NTLM = HTTPNtlmAuthHandler.HTTPNtlmAuthHandler(password_manager)
+	return build_opener(auth_NTLM)

@@ -1,4 +1,4 @@
-from .auth import basic_auth_opener
+from .auth import auth_opener
 from .site import SharePointSite
 
 
@@ -31,6 +31,7 @@ def main():
     parser.add_option('-s', '--site-url', dest='site_url', help='Root URL for the SharePoint site')
     parser.add_option('-u', '--username', dest='username', help='Username')
     parser.add_option('-p', '--password', dest='password', help='Password')
+    parser.add_option('-a', '--authtype', dest='authtype', help='Auth Type (ntlm or basic)', default='basic')
     parser.add_option('-c', '--credentials', dest='credentials', help="File containing 'username:password'.")
 
     parser.add_option('-n', '--pretty-print', dest='pretty_print', action='store_true', default=True)
@@ -80,8 +81,12 @@ def main():
     if not password:
         from getpass import getpass
         password = getpass()
-
-    opener = basic_auth_opener(options.site_url, username, password)
+    
+    if options.authtype == 'ntlm':
+        opener = auth_opener(options.site_url, username, password, ntlm=True)
+    else:
+        opener = auth_opener(options.site_url, username, password, ntlm=False)
+    
     site = SharePointSite(options.site_url, opener, timeout=options.timeout)
 
     if not len(args) == 1:

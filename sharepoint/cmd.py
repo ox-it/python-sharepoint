@@ -1,4 +1,4 @@
-from .auth import basic_auth_opener
+from .auth import auth_opener
 from .site import SharePointSite
 
 
@@ -81,7 +81,7 @@ def main():
         from getpass import getpass
         password = getpass()
 
-    opener = basic_auth_opener(options.site_url, username, password)
+    opener = auth_opener(options.site_url, username, password)
     site = SharePointSite(options.site_url, opener, timeout=options.timeout)
 
     if not len(args) == 1:

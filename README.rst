@@ -28,23 +28,26 @@ installed::
    $ sudo yum install python-lxml      # RedHat, Fedora
    $ sudo pip install lxml             # pip
 
+If you require NTLM Authenticaion, you will also need ``ntlm3``::
+
+    $ pip install python-ntlm3
 
 Usage
 -----
 
 First, you need to create a ``SharePointSite`` object. We'll assume you're
-using basic auth; if you're not, you'll need to create an appropriate `urllib2
+using basic or NTLM auth; if you're not, you'll need to create an appropriate `urllib2
 Opener <http://docs.python.org/2/library/urllib2.html#urllib2.build_opener>`_
 yourself.
 
 .. code::
 
-   from sharepoint import SharePointSite, basic_auth_opener
+   from sharepoint import SharePointSite, auth_opener
 
    server_url = "http://sharepoint.example.org/"
    site_url = server_url + "sites/foo/bar"
 
-   opener = basic_auth_opener(server_url, "username", "password")
+   opener = auth_opener(server_url, "username", "password", ntlm=False)
 
    site = SharePointSite(site_url, opener)
 

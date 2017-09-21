@@ -28,7 +28,7 @@ installed::
    $ sudo yum install python-lxml      # RedHat, Fedora
    $ sudo pip install lxml             # pip
 
-If you require NTLM Authenticaion, you will also need ``ntlm3``::
+If you require NTLM Authenticaion, you will also need ``python-ntlm3``::
 
     $ pip install python-ntlm3
 

@@ -92,6 +92,16 @@ using the list's ``save()`` method::
    
    sp_list.save()
 
+You can also approve or reject sharepoint workflow tasks::
+
+   sp_list = site.lists['ListName']
+   
+   # Approve a task
+   sp_list.rows[0].approve()
+
+   # Reject a task
+   sp_list.rows[1].reject()
+
 Consult the ``descriptor_set()`` methods in ``sharepoint.lists.types`` module
 for more information about setting SharePoint list fields.
 

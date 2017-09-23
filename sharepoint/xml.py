@@ -1,11 +1,13 @@
 from lxml import builder
 
 namespaces = {
+    'my': "http://schemas.microsoft.com/office/infopath/2003/myXSD",
     'xs': 'http://www.w3.org/2001/XMLSchema',
     'wsdl': 'http://schemas.xmlsoap.org/wsdl/',
     'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
     't': 'http://schemas.microsoft.com/exchange/services/2006/types',
     'sp': 'http://schemas.microsoft.com/sharepoint/soap/',
+    'spw': 'http://schemas.microsoft.com/sharepoint/soap/workflow/',
     'spd': 'http://schemas.microsoft.com/sharepoint/soap/directory/',
     'rs': 'urn:schemas-microsoft-com:rowset',
     'ups': 'http://microsoft.com/webservices/SharePointPortalServer/UserProfileService/GetUserProfileByIndex',
@@ -19,9 +21,11 @@ namespaces = {
     'sharepoint': 'https://github.com/ox-it/python-sharepoint/',  # Ours
 }
 
+MY = builder.ElementMaker(namespace=namespaces['my'], nsmap=namespaces)
 SOAP = builder.ElementMaker(namespace=namespaces['soap'], nsmap=namespaces)
 T = builder.ElementMaker(namespace=namespaces['t'], nsmap=namespaces)
 SP = builder.ElementMaker(namespace=namespaces['sp'], nsmap=namespaces)
+SPW = builder.ElementMaker(namespace=namespaces['spw'], nsmap=namespaces)
 SPD = builder.ElementMaker(namespace=namespaces['spd'], nsmap=namespaces)
 UPS = builder.ElementMaker(namespace=namespaces['ups'], nsmap=namespaces)
 

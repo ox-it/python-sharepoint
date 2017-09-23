@@ -1,5 +1,7 @@
 import re
 
+from six import unichr
+
 try:
     from html.entities import name2codepoint
 except ImportError:
@@ -10,6 +12,7 @@ except ImportError:
 #
 # @param text The HTML (or XML) source text.
 # @return The plain text, as a Unicode string, if necessary.
+
 
 def decode_entities(text):
     def fixup(m):
@@ -29,5 +32,5 @@ def decode_entities(text):
                 text = unichr(name2codepoint[text[1:-1]])
             except KeyError:
                 pass
-        return text # leave as is
+        return text  # leave as is
     return re.sub("&#?\w+;", fixup, text)

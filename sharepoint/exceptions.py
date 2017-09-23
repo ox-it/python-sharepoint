@@ -1,6 +1,7 @@
 class SharePointException(Exception):
     pass
 
+
 class UpdateFailedError(SharePointException):
     def __init__(self, row, update_type, code, text):
         self.row, self.update_type = row, update_type

@@ -1,9 +1,6 @@
 import base64
 
-try:
-    from urllib.request import BaseHandler, HTTPPasswordMgrWithDefaultRealm, build_opener
-except ImportError:
-    from urllib2 import BaseHandler, HTTPPasswordMgrWithDefaultRealm, build_opener
+from six.moves.urllib.request import BaseHandler, HTTPPasswordMgrWithDefaultRealm, build_opener
 
 
 class PreemptiveBasicAuthHandler(BaseHandler):
@@ -13,7 +10,7 @@ class PreemptiveBasicAuthHandler(BaseHandler):
 
     def http_request(self, request):
         url = request.get_full_url()
-        username, password = self.password_manager.find_user_password(None,url)
+        username, password = self.password_manager.find_user_password(None, url)
         if password is None:
             return request
 

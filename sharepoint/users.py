@@ -1,12 +1,9 @@
-try:
-    from urllib.request import HTTPError
-    from urllib.parse import urlparse, parse_qs
-except ImportError:
-    from urllib2 import HTTPError
-    from urlparse import urlparse, parse_qs
-
 from lxml import etree
 from lxml.builder import E
+
+from six import text_type
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.parse import urlparse, parse_qs
 
 from .xml import namespaces, OUT, SP, SEARCH, SQ
 
@@ -72,8 +69,8 @@ class SharePointUsers(object):
             E.Query(
                 E.Context(
                     E.QueryText(
-                        'SCOPE:"People"' + name
-                    ,type='STRING'),
+                        'SCOPE:"People"' + name, type='STRING'
+                    ),
                 )
             ),
         )
@@ -90,12 +87,12 @@ class SharePointUsers(object):
         self._user_searches[name] = users
         return users
 
-
     def as_xml(self, user_ids, **kwargs):
         xml = OUT.users()
         for user_id in user_ids:
             xml.append(self[user_id].as_xml())
         return xml
+
 
 class SharePointUser(object):
     def __init__(self, id, props):
@@ -126,4 +123,4 @@ class SharePointUser(object):
         return self.Name
 
     def as_xml(self, **kwargs):
-        return OUT.user(*self._props, id=unicode(self.id))
+        return OUT.user(*self._props, id=text_type(self.id))

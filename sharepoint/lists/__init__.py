@@ -145,7 +145,7 @@ class SharePointList(object):
             self._moderation = moderation.Moderation(self)
         return self._moderation
 
-    def get_rows(self, folder=''):
+    def get_rows(self, folder=None, recursive=False):
         rows = []
         attribs = collections.defaultdict(dict)
         field_groups, lookup_count = [[]], 0
@@ -159,8 +159,10 @@ class SharePointList(object):
         for field_group in field_groups:
             # Request all fields, not just the ones in the default view
             view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in field_group))
-            #query_options = E.QueryOptions(E.ViewAttributes(Scope="Recursive"))
-            query_options = E.QueryOptions(E.Folder(folder))
+            if folder:
+                query_args.append(E.Folder(folder))
+            if recursive:
+                query_args.append(E.ViewAttributes(Scope="RecursiveAll"))
             xml = SP.GetListItems(SP.listName(self.id),
                                   SP.rowLimit("100000"),
                                   SP.viewFields(view_fields),

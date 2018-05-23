@@ -90,7 +90,7 @@ class Field(object):
                 # if we have [['']], then remove the last entry
                 if values and values[-1] and not values[-1][0]:
                     del values[-1]
-                return map(self._parse, values)
+                return [self._parse(v) for v in values]
             else:
                 return [self._parse(v) for v in values if v not in empty_values]
         elif self.group_multi:

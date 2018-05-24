@@ -159,6 +159,7 @@ class SharePointList(object):
         for field_group in field_groups:
             # Request all fields, not just the ones in the default view
             view_fields = E.ViewFields(*(E.FieldRef(Name=field.name) for field in field_group))
+            query_args = []
             if folder:
                 query_args.append(E.Folder(folder))
             if recursive:

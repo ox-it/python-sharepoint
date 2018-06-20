@@ -1,7 +1,7 @@
 python-sharepoint
 =================
 
-A Python library and command-line utility for gettting data out of SharePoint.
+A Python library and command-line utility for getting data out of SharePoint.
 
 If you're more a Perl person, you might also want to try `SharePerltopus
 <https://github.com/cgutteridge/SharePerltopus>`_.

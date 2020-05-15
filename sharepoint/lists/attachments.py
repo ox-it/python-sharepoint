@@ -28,7 +28,7 @@ class SharePointAttachments(object):
         raise NotImplementedError
 
     def open(self, url):
-        return self.opener.open(url)
+        return self.opener.open(url.replace(' ', '%20'))
 
 
 class SharePointAttachment(object):

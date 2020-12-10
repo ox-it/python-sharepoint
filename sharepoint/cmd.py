@@ -127,9 +127,7 @@ def main():
                           include_field_definitions=options.include_field_definitions)
     elif action == 'shell':
         try:
-            from IPython.Shell import IPShellEmbed
-            ipshell = IPShellEmbed()
-            ipshell()
+            from IPython import embed; embed()
         except ImportError:
             import code
             import readline

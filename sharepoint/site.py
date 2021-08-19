@@ -20,6 +20,7 @@ class SharePointSite(object):
         self.opener.post_soap = self.post_soap
         self.opener.relative = functools.partial(urljoin, url)
         self.timeout = timeout
+        self.xml_parser = etree.XMLParser(recover=True)
 
     def post_soap(self, url, xml, soapaction=None):
         url = self.opener.relative(url)
@@ -28,7 +29,7 @@ class SharePointSite(object):
         if soapaction:
             request.add_header('Soapaction', soapaction)
         response = self.opener.open(request, timeout=self.timeout)
-        return etree.parse(response).xpath('/soap:Envelope/soap:Body/*', namespaces=namespaces)[0]
+        return etree.parse(response, parser=self.xml_parser).xpath('/soap:Envelope/soap:Body/*', namespaces=namespaces)[0]
 
     @property
     def lists(self):
